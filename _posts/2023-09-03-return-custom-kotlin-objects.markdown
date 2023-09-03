@@ -130,7 +130,7 @@ We can now call the askWithOutput function to create a circle of radius 5 and pr
 askWithOutput<Circle>("Create a circle of radius 5")
     .let {
         println("area of circle " + it.area())
-}
+    }
 {% endhighlight %}
 
 That will print: 
@@ -151,7 +151,7 @@ We can now call the askWithOutput function to create an array of books and print
 askWithOutput<Array<Book>>("Suggest me a list of SciFi books")
     .forEach {
         println("Book: " + it.title + " by " + it.author + " in " + it.year)
-}
+    }
 {% endhighlight %}
 
 That will print:
@@ -175,3 +175,55 @@ Book: A Canticle for Leibowitz by Walter M. Miller Jr. in 1960
 Book: Neuromancer by William Gibson in 1984
 */
 {% endhighlight %}
+
+# Go Further
+
+You could also want to return an object that is not a simple object but an object that contains other objects.
+
+{% highlight kotlin %}
+data class Address(
+    val street: String, 
+    val city: String, 
+    val state: String, 
+    val zip: String
+)
+
+class Person(val address: Address){
+    fun printAddress(){
+        println("Address of person: " + address.street 
+            + " " + address.city + " " + address.state + " " + address.zip)
+    }
+}
+{% endhighlight %}
+
+We can call the askWithOutput function to create a person and print the address of the person.
+
+{% highlight kotlin %}
+askWithOutput<Person>("""
+    Create a person named Olivier Cavadenti that have
+    an adress in Morlaix with a street, a city, a state and a zip."""
+).printAddress()
+{% endhighlight %}
+
+Unfortunately, the API will not return a valid JSON format for this example because of additional properties.
+We can try to avoid this problem by using FAIL_ON_UNKNOWN_PROPERTIES = false in the ObjectMapper.
+
+{% highlight kotlin %}
+fun <T> createInstanceFromJson(clazz: Class<T>, answer: String): T {
+    val mapper = jacksonObjectMapper()
+    mapper.configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+    return mapper.readValue(answer, clazz)
+}
+{% endhighlight %}
+
+Example of outputs:
+    
+{% highlight kotlin %}
+// Address of person 15 rue du Port Morlaix Brittany 29600
+{% endhighlight %}
+
+My Person object is created and the address object is created too !
+
+That solution need to be improved because we need to manual prompting GPT to described nested objects. 
+We could imagine a solution that will automatically prompt GPT to describe nested objects, but we need to avoid
+stack overflow and infinite loop.
