@@ -201,7 +201,7 @@ We can call the askWithOutput function to create a person and print the address 
 {% highlight kotlin %}
 askWithOutput<Person>("""
     Create a person named Olivier Cavadenti that have
-    an adress in Morlaix with a street, a city, a state and a zip."""
+    an address in Morlaix with a street, a city, a state and a zip."""
 ).printAddress()
 {% endhighlight %}
 
@@ -219,7 +219,7 @@ fun <T> createInstanceFromJson(clazz: Class<T>, answer: String): T {
 Example of outputs:
     
 {% highlight kotlin %}
-// Address of person 15 rue du Port Morlaix Brittany 29600
+// Address of person: 15 rue du Port Morlaix Brittany 29600
 {% endhighlight %}
 
 My Person object is created and the address object is created too !
