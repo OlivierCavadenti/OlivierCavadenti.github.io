@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "Return Custom Kotlin Objects from OpenAI GPT Raw Output"
+title:  "Return Kotlin Objects from OpenAI GPT Raw Output"
 date:   2023-09-03
 categories: jekyll update
 ---
