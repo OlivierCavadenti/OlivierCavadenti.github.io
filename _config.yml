@@ -8,3 +8,4 @@ github_username:  OlivierCavadenti
 theme: minima
 plugins:
   - jekyll-feed
+  - jekyll-spaceship
