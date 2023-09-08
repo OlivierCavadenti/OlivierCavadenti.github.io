@@ -16,7 +16,7 @@ This is the blog of Olivier Cavadenti a french software engineer living in Morla
 - [Polars](https://www.pola.rs/): lightning-fast DataFrame library for Rust and Python.
 - [LangChain](https://github.com/langchain-ai/langchain): framework for building LLM application in Python.
 
-```mermaid!
+```mermaid
 graph TD;
     A-->B;
     A-->C;
