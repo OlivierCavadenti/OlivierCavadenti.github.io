@@ -4,9 +4,18 @@ title: About
 permalink: /about/
 ---
 
-This is the blog of Olivier Cavadenti a french software engineer living in Morlaix, Brittany, France.
 
-[Contact](https://www.linkedin.com/in/oliviercavadenti/)
+This is the blog of Olivier Cavadenti, a French software engineer living in Morlaix, Brittany, France.
+
+I have a Ph.D. in Data Mining and 7 years of experience in full-stack software engineering with Java, Kotlin, NodeJS, and Python. 
+My fields of interest include parsers, AI, ML, LLM, and all data-related subjects.
+
+[LinkedIn Page](https://www.linkedin.com/in/oliviercavadenti/)
+
+[Book a Meeting](https://calendly.com/olivier-cavadenti/contact)
+
+Please share with me if you have any challenges or projects, I can help you !
+[Submit your project](https://9ifoecbqbtp.typeform.com/to/nfZHZ5yb)
 
 # Projects I love
 
