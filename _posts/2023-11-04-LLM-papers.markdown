@@ -29,14 +29,38 @@ categories: jekyll update
 
   - 2 November 2023: [A Survey of Large Language Models for Autonomous Driving](https://arxiv.org/pdf/2311.01043.pdf){:target="_blank"}
 
+- Hallucinations
+  
+  - 10 November 2023: [A Survey on Hallucination in Large Language Models: Principles, Taxonomy, Challenges, and Open Questions](https://arxiv.org/pdf/2311.05232.pdf)
+  - 12 September 2023: [A Survey of Hallucination in “Large” Foundation Models](https://arxiv.org/pdf/2309.05922.pdf)
+  
+- Audio Processing
+
+  - 22 September 2023: [Sparks of Large Audio Models: A Survey and Outlook](https://arxiv.org/pdf/2308.12792.pdf)
+
+- Temporal Data
+
+  - 20 October 2023: [Large Models for Time Series and Spatio-Temporal Data: A Survey and Outlook](https://arxiv.org/pdf/2310.10196.pdf) 
+  
 <hr>
 
 ## X-of-Thought
 
+#### 7 November 2023: [Everything Of Thoughts : Defying The Law Of Penrose Triangle For Thought Generation](https://arxiv.org/pdf/2311.04254.pdf)
+
+The latest breakthrough in the field of Chain of Thought (CoT) is the XoT (eXtended Chain of Thought) approach. 
+This method uses pretrained reinforcement learning combined with Monte Carlo tree search to integrate knowledge 
+from external domains into thought generation. The Monte Carlo search explores potential thought structures, 
+then creates a policy and value network for these thoughts (a policy network selects actions to take from a 
+given state or thought, while a value network assesses the quality of a given state and whether it corresponds 
+to a thought that can solve the problem). It then deduces the best possible thought trajectory for solving the 
+problem. This proposed method is highly efficient and requires few calls to Large Language Models (LLMs), 
+needing only a single call with the thought trajectory calculated by the Monte Carlo search.
+
+
 #### 17 May 2023: [Tree of Thoughts: Deliberate Problem Solving with Large Language Models](https://arxiv.org/pdf/2305.10601.pdf){:target="_blank"}
 
 ![](/images/tot.png)
-
 
 "Tree of Thoughts" (ToT) approach, a problem-solving framework for language models (LLMs) is inspired by research on human problem-solving, which views problem-solving as a search through a combinatorial space structured like a tree with nodes and branches representing partial solutions and actions respectively.
 
@@ -73,6 +97,12 @@ The main points of the paper are:
 - A chain of thought not only helps in solving multi-step problems by allowing additional computation for each step, but it also offers a window into the model's thought process, which can be useful for understanding and debugging the model's behavior.
 - This approach is versatile and can be applied to a variety of tasks such as math word problems, commonsense reasoning, and symbolic manipulation, essentially any task that humans use language to solve.
 - Chain-of-thought reasoning can be elicited in large pre-trained language models with few-shot prompting, which involves providing examples of the reasoning process in the prompts.
+
+#### 6 June 2023 [Deductive Verification of Chain-of-Thought Reasoning](https://arxiv.org/abs/2306.03872)
+
+#### 17 February 2023 [Multimodal Chain-of-Thought Reasoning in Language Models](https://arxiv.org/pdf/2302.00923.pdf)
+
+![image tooltip here](/images/mmcot.png)
 
 <hr>
 
@@ -134,6 +164,23 @@ The research highlights three key findings regarding the performance of large la
     these biases.
 
 ## RAG
+
+# Multimodal RAG
+
+### 2 November 2023 - [GPT-4V with Context: Using Retrieval Augmented Generation with Multimodal Models](https://www.datastax.com/blog/gpt-4v-with-context-using-retrieval-augmented-generation-with-multimodal-models?utm_campaign=FY21Q1_Global_accelerate_BSAcodepen&utm_source=BSAcodepen&utm_medium=display&utm_offer=events%2Faccelerate)
+
+The text outlines the integration of a multimodal model using the Retrieval-Augmented Generation (RAG) method to enhance a 
+conversational model by including images as contextual input. 
+
+It involves initializing the multimodal CLIP model for embedding user queries from images and/or text. 
+A RAGChat class is created, extending standard chat functionalities to incorporate relevant images into conversations. 
+This class is capable of querying a vector store for contextually relevant images, storing new images in the store, and 
+running the complete RAG pipeline. 
+
+The model first retrieves a list of pertinent images from the vector store using query embeddings, and then these images are used 
+as context in the conversational model. The system's effectiveness is demonstrated through examples like accurately describing 
+the Apache Cassandra logo and suggesting outfits from "Pulp Fiction" using relevant images as context, showcasing its ability to 
+enhance responses with visual information.
 
 # RAG Fusion
 
@@ -199,11 +246,7 @@ The method's performance is further enhanced by letting the model decide when to
 
 ## Multimodal
 
-# Video
-
 #### 30 October 2023 - [MM-VID : Advancing Video Understanding with GPT-4V(ision)](https://arxiv.org/pdf/2310.19773.pdf){:target="_blank"}
-
-# Image
 
 #### 23 October 2023 - [HALLUSIONBENCH: You See What You Think? Or You Think What You See?](https://arxiv.org/pdf/2310.14566.pdf){:target="_blank"}
 
@@ -220,3 +263,9 @@ The findings suggest that GPT-4V can process a mix of multimodal inputs and show
 A notable feature of GPT-4V is its ability to interpret visual markers on images, which could lead to innovative human-computer interaction methods, like visual referring prompts.
 
 The paper concludes with discussions on potential applications for GPT-4V-based systems and directions for future research, such as new multimodal task formulations, ways to leverage and improve large multimodal models (LMMs) for practical problems, and a deeper understanding of multimodal foundational models.
+
+#### 13 September 2034 [NExT-GPT: Any-to-Any Multimodal LLM](https://arxiv.org/pdf/2309.05519.pdf)
+
+#### 10 May 2023 [VideoChat : Chat-Centric Video Understanding](https://arxiv.org/pdf/2305.06355.pdf)
+
+#### 20 March 2023 [MM-REACT : Prompting ChatGPT for Multimodal Reasoning and Action](https://arxiv.org/pdf/2303.11381.pdf)
