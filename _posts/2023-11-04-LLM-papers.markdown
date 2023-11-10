@@ -41,7 +41,11 @@ categories: jekyll update
 - Temporal Data
 
   - 20 October 2023: [Large Models for Time Series and Spatio-Temporal Data: A Survey and Outlook](https://arxiv.org/pdf/2310.10196.pdf) 
-  
+
+- Medicine
+
+  - 10 November 2023: [A Survey of Large Language Models in Medicine: Progress, Application, and Challenge](https://arxiv.org/pdf/2311.05112.pdf) 
+
 <hr>
 
 ## X-of-Thought
