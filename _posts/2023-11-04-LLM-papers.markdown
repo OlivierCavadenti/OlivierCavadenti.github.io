@@ -171,7 +171,7 @@ The research highlights three key findings regarding the performance of large la
 
 # Multimodal RAG
 
-### 2 November 2023 - [GPT-4V with Context: Using Retrieval Augmented Generation with Multimodal Models](https://www.datastax.com/blog/gpt-4v-with-context-using-retrieval-augmented-generation-with-multimodal-models?utm_campaign=FY21Q1_Global_accelerate_BSAcodepen&utm_source=BSAcodepen&utm_medium=display&utm_offer=events%2Faccelerate)
+#### 2 November 2023 - [GPT-4V with Context: Using Retrieval Augmented Generation with Multimodal Models](https://www.datastax.com/blog/gpt-4v-with-context-using-retrieval-augmented-generation-with-multimodal-models?utm_campaign=FY21Q1_Global_accelerate_BSAcodepen&utm_source=BSAcodepen&utm_medium=display&utm_offer=events%2Faccelerate)
 
 The text outlines the integration of a multimodal model using the Retrieval-Augmented Generation (RAG) method to enhance a 
 conversational model by including images as contextual input. 
