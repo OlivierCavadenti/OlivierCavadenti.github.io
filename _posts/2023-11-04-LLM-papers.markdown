@@ -7,21 +7,26 @@ categories: jekyll update
 
 ## Surveys
 
+- Information Retrieval
+
+  - 15 August 2023: [Large Language Models for Information Retrieval: A Survey](https://arxiv.org/pdf/2308.07107.pdf)
+
 - Factuality 
 
-  - 18 October 2023 - [Survey on Factuality in Large Language Models: Knowledge, Retrieval and Domain-Specificity ](https://arxiv.org/pdf/2310.07521.pdf){:target="_blank"}
+  - 18 October 2023: [Survey on Factuality in Large Language Models: Knowledge, Retrieval and Domain-Specificity ](https://arxiv.org/pdf/2310.07521.pdf){:target="_blank"}
 
 - X-of-Thought
 
-  - 16 October 2023 : [A Survey of Chain of Thought Reasoning: Advances, Frontiers and Future](https://arxiv.org/pdf/2309.15402.pdf){:target="_blank"}
+  - 16 October 2023: [A Survey of Chain of Thought Reasoning: Advances, Frontiers and Future](https://arxiv.org/pdf/2309.15402.pdf){:target="_blank"}
 
 
 - Software Engineering
 
-  - 11 October 2023 - [Large Language Models for Software Engineering: Survey and Open Problems](https://arxiv.org/pdf/2310.03533.pdf){:target="_blank"}
+  - 11 October 2023: [Large Language Models for Software Engineering: Survey and Open Problems](https://arxiv.org/pdf/2310.03533.pdf){:target="_blank"}
   
 - Agents
 
+  - 27 September 2032: [Cognitive Architectures for Language Agents](https://arxiv.org/pdf/2309.02427.pdf?trk=public_post_comment-text)
   - 19 September 2023: [The Rise and Potential of Large Language Model Based Agents: A Survey](https://arxiv.org/pdf/2309.07864.pdf){:target="_blank"}
   - 7 September 2023: [A Survey on Large Language Model based Autonomous Agents](https://arxiv.org/pdf/2308.11432.pdf){:target="_blank"}
 
@@ -202,6 +207,21 @@ The main idea of RAG fusion:
 
 # Classic RAG
 
+#### 20 December 2022 - [Precise Zero-Shot Dense Retrieval without Relevance Labels](https://arxiv.org/pdf/2212.10496.pdf)
+
+![image tooltip here](/images/hyde.png)
+
+The paper introduces HyDE (Hypothetical Document Embeddings), a novel approach for zero-shot dense retrieval in information 
+retrieval systems, particularly when no relevance label is available.
+
+The proposed HyDE method involves two main steps:
+
+- Generation of Hypothetical Document: An instruction-following language model, such as InstructGPT, is used to 
+generate a hypothetical document in response to a query. This document captures relevant patterns but may contain inaccurate or false details.
+- Document Encoding and Retrieval: An unsupervised contrastively learned encoder, like Contriever, encodes this hypothetical 
+document into an embedding vector. This vector is then used to find similar real documents in the corpus based on vector similarity, 
+effectively grounding the hypothetical document in real-world data.
+
 #### 12 April 2021 - [Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks]( https://arxiv.org/pdf/2005.11401.pdf){:target="_blank"}
 
 ![image tooltip here](/images/rag.png)
@@ -225,6 +245,36 @@ The main idea of RAG fusion:
 - Flexible Conversation Patterns: Indicates that multiple agents can converse simultaneously. This is further divided into:
   - Joint chat: Where all agents seem to converse collectively.
   - Hierarchical chat: Suggesting a tiered conversation pattern, where one agent might take precedence or act as a mediator.
+
+# CoALA
+
+#### 23 September 2023 - [Cognitive Architectures for Language Agents](https://arxiv.org/pdf/2309.02427.pdf){:target="_blank"}
+
+The paper proposes a new framework for understanding and developing language agents that use large language models (LLMs) to interact with the world. 
+These language agents represent an emerging class of artificial intelligence systems that augment LLMs with internal memory and environmental interactions 
+to enhance their knowledge and reasoning capabilities. 
+
+This approach helps mitigate the limitations of LLMs, such as their restricted knowledge base, and reduces the reliance on human annotations or trial-and-error learning methods typically 
+required by traditional agents.
+
+CoALA, the proposed framework, organizes language agents along three key dimensions:
+- information storage (working and long-term memories)
+- action space (internal and external actions)
+- decision-making procedures (structured as an interactive loop with planning and execution stages). 
+
+This framework allows for a structured representation of a wide range of agents, offering insights into both current practices and future development directions.
+
+The CoALA framework is inspired by the long history of research in cognitive architectures. It integrates key concepts such as memory, grounding, learning, and decision-making. 
+The incorporation of LLMs into this framework adds "reasoning" actions, which can flexibly produce new knowledge and heuristics for various purposes, thus replacing hand-written rules found 
+in traditional cognitive architectures. CoALA also standardizes text as the primary internal representation, which streamlines the memory modules of the agents.
+
+Overall, the paper offers a significant contribution to the field of AI by providing a systematic way to understand and develop more advanced language agents, positioning LLMs 
+as core components within a broader cognitive architecture. This framework not only organizes existing work but also points towards new directions for creating more capable language-based AI agents.
+
+![img.png](/images/coalafig1.png)
+![img.png](/images/coalafig2.png)
+![img.png](/images/coalafig3.png)
+![img.png](/images/coalafig4.png)
 
 # ReAct
 
