@@ -300,6 +300,19 @@ The method's performance is further enhanced by letting the model decide when to
 
 ## Multimodal
 
+#### 9 November 2023 - [On the Road with GPT-4V(ision): Early Explorations of Visual-Language Model on Autonomous Driving](https://arxiv.org/pdf/2311.05332.pdf)
+
+The report discusses the advancement of autonomous driving technology, emphasizing the role of Visual Language Models (VLM) like GPT-4V in enhancing the capabilities of these systems. Traditional autonomous driving methods, which are either data-driven or rule-based, struggle with understanding complex driving environments and predicting the actions of other road users. GPT-4V, however, shows promise in overcoming these challenges.
+
+Key points include:
+
+- GPT-4V's superior ability in scene understanding and causal reasoning, surpassing existing systems.
+- The model's proficiency in handling unexpected scenarios, recognizing intentions, and making informed decisions in real driving situations.
+- Despite these advancements, there are still challenges in areas such as direction discernment, traffic light recognition, vision grounding, and spatial reasoning.
+- The report suggests the necessity for ongoing research and development to address these limitations.
+
+Overall, the integration of VLMs like GPT-4V into autonomous driving technology marks a significant step forward, but further improvements are needed for complete reliability and safety. The project's details are accessible on GitHub for those interested in exploring it further.
+
 #### 30 October 2023 - [MM-VID : Advancing Video Understanding with GPT-4V(ision)](https://arxiv.org/pdf/2310.19773.pdf){:target="_blank"}
 
 #### 23 October 2023 - [HALLUSIONBENCH: You See What You Think? Or You Think What You See?](https://arxiv.org/pdf/2310.14566.pdf){:target="_blank"}
