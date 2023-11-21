@@ -9,7 +9,7 @@ categories: jekyll update
 
 - Information Retrieval
 
-  - 15 August 2023: [Large Language Models for Information Retrieval: A Survey](https://arxiv.org/pdf/2308.07107.pdf)
+  - 15 August 2023: [Large Language Models for Information Retrieval: A Survey](https://arxiv.org/pdf/2308.07107.pdf){:target="_blank"}
 
 - Factuality 
 
@@ -22,11 +22,13 @@ categories: jekyll update
 
 - Software Engineering
 
+  - 19 November 2023: [A Survey on Language Models for Code](https://arxiv.org/abs/2311.07989){:target="_blank"}
   - 11 October 2023: [Large Language Models for Software Engineering: Survey and Open Problems](https://arxiv.org/pdf/2310.03533.pdf){:target="_blank"}
   
 - Agents
 
-  - 27 September 2032: [Cognitive Architectures for Language Agents](https://arxiv.org/pdf/2309.02427.pdf?trk=public_post_comment-text)
+  - 20 November 2023: [Igniting Language Intelligence: The Hitchhiker’s GuideFrom Chain-of-Thought Reasoning to Language Agents](https://arxiv.org/pdf/2311.11797.pdf){:target="_blank"}
+  - 27 September 2023: [Cognitive Architectures for Language Agents](https://arxiv.org/pdf/2309.02427.pdf?trk=public_post_comment-text){:target="_blank"}
   - 19 September 2023: [The Rise and Potential of Large Language Model Based Agents: A Survey](https://arxiv.org/pdf/2309.07864.pdf){:target="_blank"}
   - 7 September 2023: [A Survey on Large Language Model based Autonomous Agents](https://arxiv.org/pdf/2308.11432.pdf){:target="_blank"}
 
@@ -36,20 +38,20 @@ categories: jekyll update
 
 - Hallucinations
   
-  - 10 November 2023: [A Survey on Hallucination in Large Language Models: Principles, Taxonomy, Challenges, and Open Questions](https://arxiv.org/pdf/2311.05232.pdf)
-  - 12 September 2023: [A Survey of Hallucination in “Large” Foundation Models](https://arxiv.org/pdf/2309.05922.pdf)
+  - 10 November 2023: [A Survey on Hallucination in Large Language Models: Principles, Taxonomy, Challenges, and Open Questions](https://arxiv.org/pdf/2311.05232.pdf){:target="_blank"}
+  - 12 September 2023: [A Survey of Hallucination in “Large” Foundation Models](https://arxiv.org/pdf/2309.05922.pdf){:target="_blank"}
   
 - Audio Processing
 
-  - 22 September 2023: [Sparks of Large Audio Models: A Survey and Outlook](https://arxiv.org/pdf/2308.12792.pdf)
+  - 22 September 2023: [Sparks of Large Audio Models: A Survey and Outlook](https://arxiv.org/pdf/2308.12792.pdf){:target="_blank"}
 
 - Temporal Data
 
-  - 20 October 2023: [Large Models for Time Series and Spatio-Temporal Data: A Survey and Outlook](https://arxiv.org/pdf/2310.10196.pdf) 
+  - 20 October 2023: [Large Models for Time Series and Spatio-Temporal Data: A Survey and Outlook](https://arxiv.org/pdf/2310.10196.pdf) {:target="_blank"}
 
 - Medicine
 
-  - 10 November 2023: [A Survey of Large Language Models in Medicine: Progress, Application, and Challenge](https://arxiv.org/pdf/2311.05112.pdf) 
+  - 10 November 2023: [A Survey of Large Language Models in Medicine: Progress, Application, and Challenge](https://arxiv.org/pdf/2311.05112.pdf) {:target="_blank"}
 
 <hr>
 
