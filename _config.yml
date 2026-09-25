@@ -1,6 +1,7 @@
 title: Olivier Cavadenti
 description: >-
-  Olivier Cavadenti, docteur en data mining et co-fondateur d'Intellectuality.
+  Olivier Cavadenti, docteur en data mining, freelance IA (LLM, RAG, agents)
+  et co-fondateur d'Intellectuality.
   IA, outils et jeux : Patrimind, Tamis, Kynna, PodDrafts, MTG Meta History, PicSQL.
 lang: fr_FR
 baseurl: ""
@@ -13,6 +14,7 @@ author:
   github: https://github.com/OlivierCavadenti
   github_legacy: https://github.com/olcav
   calendly: https://calendly.com/olivier-cavadenti/contact
+  malt: https://www.malt.fr/profile/oliviercavadenti
   typeform: https://9ifoecbqbtp.typeform.com/to/nfZHZ5yb
 
 social:
@@ -20,6 +22,7 @@ social:
   links:
     - https://www.linkedin.com/in/oliviercavadenti/
     - https://github.com/OlivierCavadenti
+    - https://www.malt.fr/profile/oliviercavadenti
 
 markdown: kramdown
 highlighter: rouge
