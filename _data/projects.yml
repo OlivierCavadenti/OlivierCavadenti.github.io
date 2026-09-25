@@ -1,103 +1,66 @@
-# Projets affichés sous forme de cartes « Magic ».
-# mana : W (blanc) U (bleu) B (noir) R (rouge) G (vert) C (incolore) ou un chiffre.
-# frame : white | blue | black | red | green | gold | artifact
-# art : nom de la scène animée dessinée dans assets/js/main.js
+# Les planches du bestiaire : un projet, une créature, une phrase.
+# creature : nom de la scène dessinée dans assets/js/main.js
 
-- id: patrimind
-  name: Patrimind
+- name: Patrimind
+  plate: I
+  tag: Intellectuality · co-fondateur
+  line: L'IA patrimoniale des CGP. Chaque conclusion est reliée à sa source.
   url: https://patrimind.intellectuality.fr/
-  mana: ["2", "W", "U"]
-  frame: gold
-  type: Artefact légendaire — IA patrimoniale
-  rarity: mythic
-  art: patrimind
-  rules: >-
-    Lit chaque pièce du dossier client, la classe et contrôle sa conformité.
-    Chaque conclusion est reliée à sa source exacte : PDF, article de loi, BOFiP.
-  flavor: "Pour les CGP : des dossiers clients préparés plus vite, sourcés, RGPD."
-  stats: "4/5"
-  tech: Intellectuality · IA générative · données juridiques & financières
-  number: "001"
+  creature: reader
+  specimen: Lecteur à œil pédonculé
 
-- id: tamis
-  name: Tamis
+- name: Tamis
+  plate: II
+  tag: Criblage de documents
+  line: Trier des milliers de documents sans tout lire.
   url: https://tamisapp.com/en
-  mana: ["1", "G", "W"]
-  frame: green
-  type: Artefact — Criblage documentaire
-  rarity: rare
-  art: tamis
-  rules: >-
-    Lit tous vos documents selon vos critères et vous montre d'abord ce qui compte.
-    Lisez 30 à 45 % de documents en moins — avec un rapport qui chiffre ce qui
-    reste peut-être dans la pile non lue.
-  flavor: "Revue systématique, pharmacovigilance, due diligence. ≥ 99 % des études incluses retrouvées. Hébergé en France."
-  stats: "3425/1900"
-  tech: Revue systématique · Drug safety · Due diligence
-  number: "002"
+  creature: sieve
+  specimen: Méduse tamiseuse
 
-- id: kynna
-  name: Kynna
+- name: Kynna
+  plate: III
+  tag: Sondages IA
+  line: Un prompt devient un sondage intelligent en quelques secondes.
   url: https://kynna.app/
-  mana: ["1", "U", "G"]
-  frame: blue
-  type: Enchantement — Sondage IA
-  rarity: rare
-  art: kynna
-  rules: >-
-    Transforme un prompt en sondage intelligent en quelques secondes.
-    Verdict IA en direct, thèmes & sentiment, branchements conditionnels, paiements.
-  flavor: "Hébergé en Europe, prêt pour le RGPD."
-  stats: "2/3"
-  tech: Plateforme de sondages IA
-  number: "003"
+  creature: bloom
+  specimen: Fleur bavarde
 
-- id: poddrafts
-  name: PodDrafts
+- name: PodDrafts
+  plate: IV
+  tag: Magic · draft à huit
+  line: Draftez sur Draftmancer, jouez sur MTG Arena.
   url: https://poddrafts.com/
-  mana: ["R", "G"]
-  frame: red
-  type: Créature — Draftmancer Guilde
-  rarity: rare
-  art: poddrafts
-  rules: >-
-    Draftez sur Draftmancer, jouez sur MTG Arena. Calendrier de pods à 8 joueurs :
-    set du moment, flashback draft, Mystery, Chaos 24 sets, Arena Peasant Cube…
-    Classement et guide inclus.
-  flavor: "Huit joueurs, trois boosters, une seule table."
-  stats: "8/8"
-  tech: Magic · Draft communautaire · FR / EN
-  number: "004"
+  creature: octo
+  specimen: Octopode donneur
 
-- id: mtg-meta-history
-  name: MTG Meta History
+- name: MTG Meta History
+  plate: V
+  tag: Archive
+  line: L'histoire des métagames de Magic, saison par saison.
   url: https://oliviercavadenti.github.io/mtg-meta-history/
-  mana: ["U", "B", "R"]
-  frame: black
-  type: Terrain légendaire — Archive
-  rarity: uncommon
-  art: meta
-  rules: >-
-    Parcourez les métagames compétitifs de Magic année par année et format par
-    format : découvrez quels archétypes dominaient chaque saison.
-  flavor: "Ceux qui oublient la méta sont condamnés à la rejouer."
-  stats: "1993/2026"
-  tech: Vue 3 · TypeScript · Vite
-  number: "005"
+  creature: strata
+  specimen: Arbre à strates
 
-- id: picsql
-  name: PicSQL
+- name: PicSQL
+  plate: VI
+  tag: Bibliothèque Java
+  line: Retoucher des images avec du SQL.
   url: https://github.com/olcav/picsql
-  mana: ["X", "B", "R"]
-  frame: artifact
-  type: Rituel — Bibliothèque Java
-  rarity: uncommon
-  art: picsql
-  rules: >-
-    Sélectionnez et manipulez les pixels de vos images avec un dialecte SQL :
-    canaux r, g, b, positions x, y, lag/lead, sin/cos… et exportez en GIF animé.
-  flavor: "select lag(r, 5, t%20), (g*t)%255, (t*10)%255 from (face.bmp, 50)"
-  flavor_mono: true
-  stats: "★24"
-  tech: Java · ANTLR4 · Gradle · MIT
-  number: "006"
+  creature: beetle
+  specimen: Scarabée à pixels
+
+- name: Armées
+  plate: VII
+  tag: Jeu Unity 3D · en cours
+  line: Des armées de millions d'unités, des villes entières à raser, des monstres à sculpter.
+  url: https://www.reddit.com/r/gamedevscreens/comments/1wfi1n9/make_armies_with_millions_of_units_and_big/
+  creature: tripod
+  specimen: Tripode arpenteur
+
+- name: Cardwright
+  plate: VIII
+  tag: Jeu de cartes · bientôt
+  line: Les cartes sont écrites et dessinées par les joueurs.
+  url:
+  creature: quill
+  specimen: Oiseau scribe

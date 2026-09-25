@@ -1,38 +1,9 @@
-# Parcours, découpé en « cycles » à la manière de Perry Rhodan.
-- cycle: I
-  title: Les Traces
-  years: "→ 2016"
-  place: Lyon · INSA / LIRIS
-  text: >-
-    Doctorat en fouille de données sous la direction de Jean-François Boulicaut :
-    « Contribution de la découverte de motifs à l'analyse de collections de traces
-    unitaires ». Détection d'anomalies dans les traces logistiques — et, en
-    parallèle, de l'e-sport : alias d'avatars sur StarCraft II, comportements
-    déviants dans les MOBA.
-
-- cycle: II
-  title: Le Code
-  years: "2016 → 2023"
-  place: Freelance · full-stack
-  text: >-
-    Sept ans d'ingénierie logicielle : Java, Kotlin, Node.js, Python, Vue et Angular,
-    Ansible et Docker. Parsers et interpréteurs avec ANTLR4 (PicSQL), contributions
-    open source à Knex, JSqlParser, Elasticsearch, Lucene…
-
-- cycle: III
-  title: Les Agents
-  years: "2023 → 2024"
-  place: LLM · agents
-  text: >-
-    Les modèles de langage deviennent un terrain de jeu : sorties typées Kotlin
-    depuis GPT, grammaires ANTLR4 générées en langage naturel, agents qui écrivent
-    documentation et tests fonctionnels, veille sur les papiers de recherche.
-
-- cycle: IV
-  title: Intellectuality
-  years: "2025 → …"
-  place: Dijon · Morlaix
-  text: >-
-    Co-fondation d'Intellectuality, qui outille le conseil patrimonial et financier
-    avec l'IA générative et les données juridiques et financières : Patrimind.
-    Et tout autour, d'autres vaisseaux : Tamis, Kynna, PodDrafts, MTG Meta History.
+# Journal de bord : une ligne par étape.
+- when: "2016"
+  what: Docteur en fouille de données, INSA Lyon / LIRIS.
+- when: "2016 → 2023"
+  what: Ingénieur full-stack freelance. Java, Kotlin, Node, Python.
+- when: "2023"
+  what: Plongée dans les LLM et les agents.
+- when: "2025"
+  what: Co-fondateur d'Intellectuality, à Dijon.
