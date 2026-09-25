@@ -1,25 +1,14 @@
 ---
 permalink: /404.html
 layout: default
+title: Perdu dans l'hyperespace
+body_class: page page--404
 ---
-
-<style type="text/css" media="screen">
-  .container {
-    margin: 10px auto;
-    max-width: 600px;
-    text-align: center;
-  }
-  h1 {
-    margin: 30px 0;
-    font-size: 4em;
-    line-height: 1;
-    letter-spacing: -1px;
-  }
-</style>
-
-<div class="container">
-  <h1>404</h1>
-
-  <p><strong>Page not found :(</strong></p>
-  <p>The requested page could not be found.</p>
-</div>
+<section class="lost">
+  <canvas class="art-canvas lost__sky" data-art="warp" width="200" height="120" aria-hidden="true"></canvas>
+  <canvas class="sprite lost__astro" data-sprite="astro" data-scale="8" aria-hidden="true"></canvas>
+  <h1 class="lost__code glitch" data-text="404">404</h1>
+  <p class="pixel">Transition hyperspatiale ratée.</p>
+  <p>Cette page dérive quelque part entre deux galaxies.</p>
+  <a class="btn btn--primary" href="{{ '/' | relative_url }}">Retour à la base</a>
+</section>

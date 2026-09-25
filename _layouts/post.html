@@ -1,0 +1,18 @@
+---
+layout: default
+body_class: page page--post
+lang: en
+---
+<article class="prose-wrap">
+  <header class="prose-head">
+    <p class="pixel prose-kicker"><a href="{{ '/blog/' | relative_url }}">← Transmissions</a></p>
+    <h1 class="prose-title">{{ page.title | escape }}</h1>
+    <p class="prose-meta">
+      <time datetime="{{ page.date | date_to_xmlschema }}">{{ page.date | date: '%d/%m/%Y' }}</time>
+      · {{ content | number_of_words | divided_by: 200 | plus: 1 }} min
+    </p>
+  </header>
+  <div class="prose">
+    {{ content }}
+  </div>
+</article>

@@ -1,14 +1,39 @@
 title: Olivier Cavadenti
-description: >- # this means to ignore newlines until "baseurl:"
+tagline: "Ph.D. en fouille de données · IA générative · co-fondateur d'Intellectuality"
+description: >-
+  Olivier Cavadenti, docteur en fouille de données, ingénieur logiciel et
+  co-fondateur d'Intellectuality. Agents, LLM, data — et les produits qui en
+  naissent : Patrimind, Kynna, Tamis, PodDrafts, MTG Meta History, PicSQL.
+lang: fr_FR
+baseurl: ""
+url: "https://oliviercavadenti.github.io"
+github_username: OlivierCavadenti
 
-baseurl: "" # the subpath of your site, e.g. /blog
-url: "" # the base hostname & protocol for your site, e.g. http://example.com
-github_username:  OlivierCavadenti
+author:
+  name: Olivier Cavadenti
+  linkedin: https://www.linkedin.com/in/oliviercavadenti/
+  github: https://github.com/OlivierCavadenti
+  github_legacy: https://github.com/olcav
+  calendly: https://calendly.com/olivier-cavadenti/contact
+  typeform: https://9ifoecbqbtp.typeform.com/to/nfZHZ5yb
 
-theme: minima
+social:
+  name: Olivier Cavadenti
+  links:
+    - https://www.linkedin.com/in/oliviercavadenti/
+    - https://github.com/OlivierCavadenti
+
+markdown: kramdown
+highlighter: rouge
+
 plugins:
   - jekyll-feed
-  - jekyll-spaceship
+  - jekyll-seo-tag
 
 exclude:
   - penv
+  - Gemfile
+  - Gemfile.lock
+  - identifier.sqlite
+  - vendor
+  - README.md

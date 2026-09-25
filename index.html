@@ -1,0 +1,371 @@
+---
+layout: default
+title: Olivier Cavadenti — IA, données & vaisseaux en orbite
+body_class: home
+---
+{%- assign projects = site.data.projects -%}
+
+<!-- ============ HERO ============ -->
+<section class="hero" aria-labelledby="hero-title">
+  <canvas class="hero__cosmos" id="cosmos" aria-hidden="true"></canvas>
+  <div class="hero__floor" aria-hidden="true"><div class="hero__grid"></div></div>
+  <div class="hero__sun" aria-hidden="true"></div>
+  <canvas class="sprite hero__planet" data-sprite="planet" data-scale="4" aria-hidden="true"></canvas>
+  <div class="hero__ship-wrap" aria-hidden="true">
+    <canvas class="sprite hero__ship" data-sprite="kugel" data-scale="5"></canvas>
+  </div>
+
+  <div class="hero__content">
+    <p class="pixel hero__kicker"><span class="blink" aria-hidden="true">▮</span> <span data-type>transmission entrante · Morlaix, Bretagne</span></p>
+    <h1 class="hero__title" id="hero-title">
+      <span class="glitch" data-text="Olivier">Olivier</span>
+      <span class="glitch" data-text="Cavadenti">Cavadenti</span>
+    </h1>
+    <p class="hero__role">Ph.D. en fouille de données · ingénieur IA · co-fondateur d'<a href="#intellectuality">Intellectuality</a></p>
+    <p class="hero__lede">
+      Je construis des produits d'IA générative — agents, LLM, pipelines de données —
+      qui lisent pour vous les milliers de pages que personne n'a le temps de lire.
+    </p>
+    <div class="hero__actions">
+      <a class="btn btn--primary" href="#projets">Voir les projets</a>
+      <a class="btn" href="{{ site.author.calendly }}" target="_blank" rel="noopener">Prendre rendez-vous</a>
+    </div>
+  </div>
+
+  <a class="hero__scroll pixel" href="#profil" aria-label="Descendre">▼ scroll</a>
+</section>
+
+<div class="ticker" aria-hidden="true">
+  <div class="ticker__track">
+    {%- capture tick -%}<span>IA générative</span><b>✦</b><span>Agents</span><b>✦</b><span>LLM</span><b>✦</b><span>Data mining</span><b>✦</b><span>Kotlin</span><b>✦</b><span>Java</span><b>✦</b><span>Python</span><b>✦</b><span>ANTLR4</span><b>✦</b><span>Vue</span><b>✦</b><span>Synthés modulaires</span><b>✦</b><span>Perry Rhodan</span><b>✦</b><span>Magic : The Gathering</span><b>✦</b><span>Unity</span><b>✦</b><span>Cardwright</span><b>✦</b>{%- endcapture -%}
+    {{ tick }}{{ tick }}
+  </div>
+</div>
+
+<!-- ============ PROFIL ============ -->
+<section class="section profil" id="profil" aria-labelledby="profil-title">
+  <div class="wrap profil__grid">
+    <div class="profil__text reveal">
+      <p class="pixel eyebrow">01 · Profil</p>
+      <h2 class="h2" id="profil-title">Un chercheur en data mining qui a pris goût au code — puis aux agents.</h2>
+      <p>
+        Docteur de l'Université de Lyon (INSA / LIRIS, 2016), j'ai passé ma thèse à faire parler
+        des traces : parcours logistiques, anomalies, contrefaçons… et parties d'e-sport, en
+        démasquant les alias de joueurs pros sur StarCraft&nbsp;II ou les comportements déviants
+        dans les MOBA.
+      </p>
+      <p>
+        Depuis, j'ai été ingénieur full-stack freelance pendant sept ans (Java, Kotlin, Node.js,
+        Python, Vue, Angular, Docker), passionné de parsers et d'interpréteurs, avant de plonger
+        dans les LLM et les agents. Aujourd'hui, je co-dirige <a href="#intellectuality">Intellectuality</a>
+        et je lance des produits qui mettent l'IA au service de ceux qui croulent sous les documents.
+      </p>
+      <p class="profil__links">
+        <a href="{{ site.author.linkedin }}" target="_blank" rel="noopener">LinkedIn ↗</a>
+        <a href="{{ site.author.github }}" target="_blank" rel="noopener">GitHub ↗</a>
+        <a href="https://theses.hal.science/tel-01529760/" target="_blank" rel="noopener">Thèse ↗</a>
+        <a href="https://scholar.google.com/citations?user=vfDdbjoAAAAJ" target="_blank" rel="noopener">Scholar ↗</a>
+      </p>
+    </div>
+    <ul class="stats reveal" aria-label="En chiffres">
+      <li class="stat"><span class="stat__n pixel">2016</span><span class="stat__l">Ph.D. data mining, INSA Lyon</span></li>
+      <li class="stat"><span class="stat__n pixel">7+</span><span class="stat__l">années d'ingénierie full-stack</span></li>
+      <li class="stat"><span class="stat__n pixel">6</span><span class="stat__l">produits en orbite</span></li>
+      <li class="stat"><span class="stat__n pixel">∞</span><span class="stat__l">câbles de patch emmêlés</span></li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ INTELLECTUALITY ============ -->
+<section class="section station" id="intellectuality" aria-labelledby="intel-title">
+  <div class="wrap station__grid">
+    <div class="station__art reveal">
+      <canvas class="art-canvas" data-art="neural" width="160" height="120" aria-hidden="true"></canvas>
+      <span class="station__badge pixel">Base principale</span>
+    </div>
+    <div class="station__text reveal">
+      <p class="pixel eyebrow">02 · Vaisseau amiral</p>
+      <h2 class="h2" id="intel-title">Intellectuality</h2>
+      <p class="station__meta">Co-fondateur · depuis 2025 · Dijon</p>
+      <p>
+        Intellectuality conçoit des outils qui automatisent et enrichissent le conseil
+        patrimonial et financier grâce à l'IA générative et à l'exploitation des données
+        juridiques et financières.
+      </p>
+      <p>
+        Son premier produit, <strong>Patrimind</strong>, est l'IA patrimoniale des CGP : elle lit les pièces
+        du dossier client, les classe, contrôle la conformité et relie chaque conclusion à sa
+        source exacte — PDF, article de loi, BOFiP.
+      </p>
+      <a class="btn btn--primary" href="https://patrimind.intellectuality.fr/" target="_blank" rel="noopener">Découvrir Patrimind ↗</a>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PROJETS (cartes Magic) ============ -->
+<section class="section projets" id="projets" aria-labelledby="projets-title">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <p class="pixel eyebrow">03 · Projets</p>
+      <h2 class="h2" id="projets-title">Ma main de départ</h2>
+      <p class="section-head__sub">Six cartes, six produits. Survolez-les pour les faire briller, cliquez pour les lancer.</p>
+    </div>
+
+    <ul class="deck">
+      {%- for p in projects -%}
+      <li class="deck__slot reveal" style="--i: {{ forloop.index0 }}">
+        <a class="mtg mtg--{{ p.frame }}" href="{{ p.url }}" target="_blank" rel="noopener" aria-label="{{ p.name }} — {{ p.type }}">
+          <div class="mtg__body">
+            <div class="mtg__bar">
+              <span class="mtg__name">{{ p.name }}</span>
+              <span class="mana" aria-hidden="true">{% for m in p.mana %}<i class="pip pip--{{ m }}">{{ m }}</i>{% endfor %}</span>
+            </div>
+            <div class="mtg__art">
+              <canvas class="art-canvas" data-art="{{ p.art }}" width="120" height="72" aria-hidden="true"></canvas>
+            </div>
+            <div class="mtg__type">
+              <span>{{ p.type }}</span>
+              <i class="gem gem--{{ p.rarity }}" aria-hidden="true"></i>
+            </div>
+            <div class="mtg__text">
+              <p>{{ p.rules }}</p>
+              <p class="mtg__flavor{% if p.flavor_mono %} mtg__flavor--mono{% endif %}">{{ p.flavor }}</p>
+            </div>
+            <div class="mtg__foot">
+              <span>{{ p.number }}/006 · OC · FR</span>
+              <span class="mtg__pt">{{ p.stats }}</span>
+            </div>
+          </div>
+          <span class="mtg__foil" aria-hidden="true"></span>
+        </a>
+        <p class="deck__caption">{{ p.tech }}</p>
+      </li>
+      {%- endfor -%}
+    </ul>
+  </div>
+</section>
+
+<!-- ============ CYCLES ============ -->
+<section class="section cycles" id="cycles" aria-labelledby="cycles-title">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <p class="pixel eyebrow">04 · Parcours</p>
+      <h2 class="h2" id="cycles-title">Les cycles</h2>
+      <p class="section-head__sub">Comme toute bonne saga de space opera, mon parcours se lit par cycles.</p>
+    </div>
+    <ol class="timeline">
+      {%- for c in site.data.timeline -%}
+      <li class="timeline__item reveal">
+        <span class="timeline__node pixel" aria-hidden="true">{{ c.cycle }}</span>
+        <div class="timeline__card">
+          <p class="timeline__years pixel">Cycle {{ c.cycle }} · {{ c.years }}</p>
+          <h3 class="timeline__title">{{ c.title }}</h3>
+          <p class="timeline__place">{{ c.place }}</p>
+          <p>{{ c.text }}</p>
+        </div>
+      </li>
+      {%- endfor -%}
+    </ol>
+
+    <details class="pubs reveal">
+      <summary><span class="pixel">Publications choisies</span></summary>
+      <ul>
+        <li><em>What Did I Do Wrong in My MOBA Game? Mining Patterns Discriminating Deviant Behaviours</em> — IEEE DSAA 2016.</li>
+        <li><em>When Cyberathletes Conceal Their Game: Clustering Confusion Matrices to Identify Avatar Aliases</em> — IEEE DSAA 2015.</li>
+        <li><em>Identifying Avatar Aliases in StarCraft 2</em> — Machine Learning and Data Mining for Sports Analytics, ECML PKDD 2015.</li>
+        <li><em>Contribution de la découverte de motifs à l'analyse de collections de traces unitaires</em> — thèse de doctorat, Université de Lyon, 2016.</li>
+      </ul>
+    </details>
+  </div>
+</section>
+
+<!-- ============ HORS ORBITE ============ -->
+<section class="section orbite" id="hors-orbite" aria-labelledby="orbite-title">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <p class="pixel eyebrow">05 · Hors orbite</p>
+      <h2 class="h2" id="orbite-title">Ce qui tourne quand l'ordi est éteint</h2>
+    </div>
+
+    <!-- Module Eurorack jouable -->
+    <div class="rack reveal" id="rack">
+      <div class="rack__rail" aria-hidden="true"></div>
+      <div class="rack__row">
+        <div class="module module--osc">
+          <p class="module__name pixel">OC-01 · Cosmic Osc</p>
+          <div class="knobs">
+            <div class="knob-wrap"><div class="knob" role="slider" tabindex="0" aria-label="Fréquence" aria-valuemin="0" aria-valuemax="100" aria-valuenow="35" data-param="freq"><span class="knob__cap"></span></div><span class="pixel" aria-hidden="true">freq</span></div>
+            <div class="knob-wrap"><div class="knob" role="slider" tabindex="0" aria-label="Ratio" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50" data-param="ratio"><span class="knob__cap"></span></div><span class="pixel" aria-hidden="true">ratio</span></div>
+            <div class="knob-wrap"><div class="knob" role="slider" tabindex="0" aria-label="Filtre" aria-valuemin="0" aria-valuemax="100" aria-valuenow="45" data-param="cutoff"><span class="knob__cap"></span></div><span class="pixel" aria-hidden="true">cutoff</span></div>
+            <div class="knob-wrap"><div class="knob" role="slider" tabindex="0" aria-label="LFO" aria-valuemin="0" aria-valuemax="100" aria-valuenow="30" data-param="lfo"><span class="knob__cap"></span></div><span class="pixel" aria-hidden="true">lfo</span></div>
+          </div>
+          <div class="jacks" aria-hidden="true"><i class="jack"></i><i class="jack"></i><i class="jack"></i><i class="jack"></i></div>
+        </div>
+        <div class="module module--scope">
+          <p class="module__name pixel">Scope · X/Y</p>
+          <canvas class="scope" id="scope" width="220" height="220" aria-label="Oscilloscope en mode Lissajous"></canvas>
+          <div class="leds" aria-hidden="true"><i class="led" id="led-a"></i><i class="led" id="led-b"></i><i class="led" id="led-c"></i></div>
+        </div>
+        <div class="module module--out">
+          <p class="module__name pixel">Out</p>
+          <button class="synth-btn pixel" id="synth-toggle" aria-pressed="false">▶ Patch</button>
+          <p class="module__hint">Tournez les potards (glisser, molette ou flèches). Volume doux, promis.</p>
+          <div class="jacks" aria-hidden="true"><i class="jack"></i><i class="jack jack--out"></i></div>
+        </div>
+      </div>
+      <svg class="cables" id="cables" aria-hidden="true"></svg>
+    </div>
+
+    <div class="passions">
+      <article class="passion passion--rhodan reveal">
+        <div class="pulp">
+          <p class="pulp__top pixel"><span>N° 0001</span><span>Ad astra</span></p>
+          <canvas class="sprite pulp__ship" data-sprite="kugel" data-scale="3" aria-hidden="true"></canvas>
+          <canvas class="art-canvas pulp__sky" data-art="warp" width="120" height="90" aria-hidden="true"></canvas>
+          <p class="pulp__title">Perry Rhodan</p>
+        </div>
+        <div class="passion__text">
+          <h3>Perry Rhodan</h3>
+          <p>
+            Fan de la plus longue saga de science-fiction au monde : publiée chaque semaine
+            depuis 1961, plus de 3&nbsp;000 fascicules. Vaisseaux sphériques, Arkonides,
+            mutants et Troisième Force — le space opera à l'échelle cosmique.
+          </p>
+        </div>
+      </article>
+
+      <article class="passion passion--magic reveal">
+        <div class="fan" aria-hidden="true">
+          <span class="cardback"></span><span class="cardback"></span><span class="cardback"></span>
+          <span class="mana-orbit"><i class="pip pip--W">W</i><i class="pip pip--U">U</i><i class="pip pip--B">B</i><i class="pip pip--R">R</i><i class="pip pip--G">G</i></span>
+        </div>
+        <div class="passion__text">
+          <h3>Magic : The Gathering</h3>
+          <p>
+            Draft, cube, archéologie de la méta… Magic est à l'origine de
+            <a href="https://poddrafts.com/" target="_blank" rel="noopener">PodDrafts</a> et de
+            <a href="https://oliviercavadenti.github.io/mtg-meta-history/" target="_blank" rel="noopener">MTG Meta History</a>.
+          </p>
+        </div>
+      </article>
+
+      <article class="passion passion--modular reveal">
+        <canvas class="art-canvas passion__art" data-art="patch" width="120" height="90" aria-hidden="true"></canvas>
+        <div class="passion__text">
+          <h3>Synthés modulaires</h3>
+          <p>
+            Des oscillateurs, des câbles, des LFO qui s'emballent : le modulaire, c'est de la
+            programmation qu'on touche du doigt. Le module au-dessus est jouable.
+          </p>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ============ COIN JEU ============ -->
+<section class="section jeu" id="jeu" aria-labelledby="jeu-title">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <p class="pixel eyebrow">06 · Coin jeu</p>
+      <h2 class="h2" id="jeu-title">Deux jeux en chantier</h2>
+      <p class="section-head__sub">Quand je ne code pas des agents, je code des jeux. Les deux démos ci-dessous sont jouables.</p>
+    </div>
+
+    <div class="games">
+      <article class="game reveal">
+        <div class="game__screen">
+          <canvas class="armies" id="armies" width="240" height="150" aria-label="Démo : deux armées de pixels et un tripode à laser se battent dans une banlieue. Cliquez pour lancer une charge."></canvas>
+          <p class="game__hud pixel" aria-hidden="true"><span id="armies-count">0</span> unités · clic = charge</p>
+        </div>
+        <div class="game__text">
+          <p class="game__tag pixel">Unity 3D · bac à sable de destruction · en développement</p>
+          <h3>Armées, métropoles et monstres forgés</h3>
+          <p>
+            Un bac à sable Unity 3D de batailles à très grande échelle : des armées de millions
+            d'unités, des villes entières — gratte-ciel, banlieues, zones industrielles, pyramides —
+            peintes au pinceau puis réduites en poussière. Les monstres sortent de la Forge, un
+            éditeur où l'on sculpte tête, yeux, membres, surface et capacités de combat.
+            Choisissez vos camps, puis un seul bouton : « Lancer la bataille ».
+          </p>
+          <p>Ci-contre, sa version de poche en 2D : des milliers de pixels, une banlieue et un tripode à laser. Cliquez pour lancer la charge.</p>
+          <a class="link-more" href="https://www.reddit.com/r/gamedevscreens/comments/1wfi1n9/make_armies_with_millions_of_units_and_big/" target="_blank" rel="noopener">Voir les captures sur Reddit ↗</a>
+        </div>
+      </article>
+
+      <article class="game reveal">
+        <div class="game__screen game__screen--tcg">
+          <div class="forge">
+            <div class="cw-card">
+              <div class="cw-card__bar">
+                <span class="cw-card__cost">6</span>
+                <span class="cw-card__name" contenteditable="true" spellcheck="false" aria-label="Nom de votre carte">Éclaireuse</span>
+                <span class="cw-card__rarity" aria-hidden="true"></span>
+              </div>
+              <canvas class="cw-card__art" id="drawcard" width="64" height="48" aria-label="Zone de dessin : dessinez l'illustration de votre carte"></canvas>
+              <p class="cw-card__text" id="cw-text"><b>Entrée :</b> pioche 2, 2 dégâts à un monstre adverse.</p>
+              <p class="cw-card__stats"><span class="cw-atk">2</span> / <span class="cw-hp">6</span></p>
+            </div>
+            <div class="forge__tools">
+              <p class="forge__label">Illustration</p>
+              <span class="palette" id="palette" role="group" aria-label="Couleurs du pinceau"></span>
+              <button class="forge__btn" id="drawcard-clear" type="button">Effacer</button>
+              <p class="forge__label">Mots-clés</p>
+              <span class="keywords" id="keywords" role="group" aria-label="Mots-clés">
+                <button type="button" aria-pressed="false">Flash</button><button type="button" aria-pressed="false">Vif</button><button type="button" aria-pressed="false">Perçant</button><button type="button" aria-pressed="false">Insaisissable</button><button type="button" aria-pressed="false">Fragile</button><button type="button" aria-pressed="false">Vorace</button>
+              </span>
+            </div>
+          </div>
+        </div>
+        <div class="game__text">
+          <p class="game__tag pixel">Cardwright · jeu de cartes en ligne · bientôt</p>
+          <h3>Cardwright — les cartes sont écrites par les joueurs</h3>
+          <p>
+            Un jeu de cartes en ligne où chacun forge ses propres cartes : illustration dessinée
+            à la main, capacités, mots-clés, et un barème qui calcule ce que la carte vaut.
+            Chaque semaine, les joueurs jugent les créations des autres. Duel classé, table
+            privée, draft ou scellé, tournois en temps réel, partie contre l'IA.
+          </p>
+          <p>La page arrive bientôt. En attendant, passez à la Forge : dessinez l'illustration, renommez la carte, ajoutez des mots-clés.</p>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ============ BLOG ============ -->
+<section class="section transmissions" id="transmissions" aria-labelledby="blog-title">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <p class="pixel eyebrow">07 · Transmissions</p>
+      <h2 class="h2" id="blog-title">Derniers articles</h2>
+    </div>
+    <ul class="posts">
+      {%- for post in site.posts limit: 6 -%}
+      <li class="reveal">
+        <a class="post-row" href="{{ post.url | relative_url }}">
+          <time class="pixel" datetime="{{ post.date | date_to_xmlschema }}">{{ post.date | date: '%Y.%m.%d' }}</time>
+          <span class="post-row__title">{{ post.title | escape }}</span>
+          <span class="post-row__arrow" aria-hidden="true">→</span>
+        </a>
+      </li>
+      {%- endfor -%}
+    </ul>
+    <p><a class="link-more" href="{{ '/blog/' | relative_url }}">Toutes les transmissions →</a></p>
+  </div>
+</section>
+
+<!-- ============ CONTACT ============ -->
+<section class="section contact" id="contact" aria-labelledby="contact-title">
+  <div class="wrap contact__inner reveal">
+    <canvas class="sprite contact__sprite" data-sprite="astro" data-scale="6" aria-hidden="true"></canvas>
+    <p class="pixel eyebrow">08 · Contact</p>
+    <h2 class="h2 contact__title" id="contact-title">Ouvrir un canal hyperondes</h2>
+    <p>Un projet, un défi data ou IA, une partie de draft ? Parlons-en.</p>
+    <div class="hero__actions contact__actions">
+      <a class="btn btn--primary" href="{{ site.author.calendly }}" target="_blank" rel="noopener">Réserver un créneau</a>
+      <a class="btn" href="{{ site.author.typeform }}" target="_blank" rel="noopener">Soumettre un projet</a>
+      <a class="btn" href="{{ site.author.linkedin }}" target="_blank" rel="noopener">LinkedIn</a>
+    </div>
+  </div>
+</section>

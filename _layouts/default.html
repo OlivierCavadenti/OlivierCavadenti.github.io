@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="{{ page.lang | default: layout.lang | default: 'fr' }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#07030f">
+  <script>document.documentElement.classList.add('js')</script>
+  {% seo %}
+  {% feed_meta %}
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' shape-rendering='crispEdges'%3E%3Cpath fill='%23ff3df2' d='M5 2h6v1h2v2h1v6h-1v2h-2v1H5v-1H3v-2H2V5h1V3h2z'/%3E%3Cpath fill='%2300f0ff' d='M0 7h16v2H0z'/%3E%3Cpath fill='%23fff36b' d='M5 7h1v2H5zM10 7h1v2h-1z'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,500;0,700;1,400&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;600&family=Nunito:wght@800;900&family=Silkscreen&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ '/assets/css/main.css' | relative_url }}">
+</head>
+<body class="{{ page.body_class | default: layout.body_class | default: 'page' }}">
+  <a class="skip" href="#main">Aller au contenu</a>
+
+  <header class="nav" id="top">
+    <a class="nav__brand" href="{{ '/' | relative_url }}" aria-label="Accueil">
+      <canvas class="sprite" data-sprite="kugel-mini" width="16" height="16" aria-hidden="true"></canvas>
+      <span>Olivier&nbsp;Cavadenti</span>
+    </a>
+    <nav class="nav__links" aria-label="Navigation principale">
+      <a href="{{ '/#projets' | relative_url }}">Projets</a>
+      <a href="{{ '/#cycles' | relative_url }}">Parcours</a>
+      <a href="{{ '/#hors-orbite' | relative_url }}">Hors orbite</a>
+      <a href="{{ '/#jeu' | relative_url }}">Jeux</a>
+      <a href="{{ '/blog/' | relative_url }}">Blog</a>
+      <a class="nav__cta" href="{{ site.author.calendly }}" target="_blank" rel="noopener">Contact</a>
+    </nav>
+  </header>
+
+  <main id="main">
+    {{ content }}
+  </main>
+
+  <footer class="footer">
+    <div class="footer__inner">
+      <canvas class="sprite footer__sprite" data-sprite="astro" width="16" height="16" aria-hidden="true"></canvas>
+      <p class="footer__motto pixel">Ad astra&nbsp;!</p>
+      <ul class="footer__links">
+        <li><a href="{{ site.author.linkedin }}" target="_blank" rel="noopener">LinkedIn</a></li>
+        <li><a href="{{ site.author.github }}" target="_blank" rel="noopener">GitHub</a></li>
+        <li><a href="{{ site.author.calendly }}" target="_blank" rel="noopener">Prendre rendez-vous</a></li>
+        <li><a href="{{ '/feed.xml' | relative_url }}">RSS</a></li>
+      </ul>
+      <p class="footer__small">© {{ site.time | date: '%Y' }} Olivier Cavadenti · Morlaix, Bretagne · Fait main, pixel par pixel.</p>
+    </div>
+  </footer>
+
+  <script src="{{ '/assets/js/main.js' | relative_url }}" defer></script>
+</body>
+</html>
