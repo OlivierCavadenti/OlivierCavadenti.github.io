@@ -46,8 +46,8 @@
 /* ---------- Rack ---------- */
 .rack-wrap { max-width: 2140px; margin: clamp(36px, 5vw, 64px) auto 0; padding: 0 clamp(8px, 1.4vw, 24px); }
 .rack {
-  /* 53 hp in the widest row: modules shrink a little so each row fits on one line */
-  --hp: clamp(24px, calc((100vw - 170px) / 53), 30px);
+  /* 56 hp in the widest row: modules shrink a little so each row fits on one line */
+  --hp: clamp(24px, calc((100vw - 170px) / 56), 30px);
   position: relative;
   display: flex; flex-wrap: wrap; justify-content: center; gap: 5px;
   padding: 12px;
@@ -185,6 +185,16 @@
 .kbd__oct { font-family: var(--mono); font-size: 0.66rem; min-width: 46px; text-align: center; }
 .kbd__midi { margin-left: auto; }
 .kbd__midi.is-on { background: var(--sage); color: var(--ink); }
+
+/* break grid */
+.brk { display: grid; grid-template-columns: 18px repeat(16, 1fr); gap: 3px 2px; width: 100%; align-items: center; }
+.brk__lane { font-family: var(--mono); font-size: 0.52rem; letter-spacing: 0.04em; }
+.brk__cell { height: 22px; min-width: 0; padding: 0; background: var(--paper); border: 1.5px solid var(--ink); cursor: pointer; }
+.brk__cell.is-beat { border-left-width: 3px; }
+.brk__cell[data-v="1"] { background: var(--ink); }
+.brk__cell[data-v="2"] { background: linear-gradient(135deg, var(--ink) 0 50%, var(--paper) 50%); }
+.brk__cell.is-now { box-shadow: 0 0 0 2px var(--yellow); }
+.brk__cell.is-chop { box-shadow: 0 0 0 2px var(--red); }
 
 /* euclid ring, chaos trace, scope */
 .euclid { width: 100%; max-width: 112px; height: auto; aspect-ratio: 1; overflow: visible; }

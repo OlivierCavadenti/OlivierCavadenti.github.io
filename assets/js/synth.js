@@ -31,10 +31,10 @@ class Clock extends AudioWorkletProcessor {
   }
   constructor() { super(); this.ph = 0; this.beat = -1; }
   process(ins, outs, p) {
-    const run = p.run[0] > 0.5, inc = run ? p.bpm[0] / 60 / sampleRate : 0, n = outs[0][0].length, mult = [4, 2, 1, 0.5];
+    const run = p.run[0] > 0.5, inc = run ? p.bpm[0] / 60 / sampleRate : 0, n = outs[0][0].length, mult = [4, 2, 1, 0.5, 0.25];
     for (let i = 0; i < n; i++) {
       this.ph += inc;
-      for (let k = 0; k < 4; k++) outs[k][0][i] = run && (this.ph * mult[k]) % 1 < 0.5 ? 1 : 0;
+      for (let k = 0; k < 5; k++) outs[k][0][i] = run && (this.ph * mult[k]) % 1 < 0.5 ? 1 : 0;
     }
     const b = Math.floor(this.ph);
     if (run && b !== this.beat) { this.beat = b; this.port.postMessage(b); }
@@ -183,7 +183,7 @@ class Drum extends AudioWorkletProcessor {
   constructor() { super(); this.ph = 0; this.env = 0; this.pe = 0; this.ne = 0; this.lp = 0; this.pt = 0; }
   process(ins, outs, p) {
     const t = ins[0][0], cv = ins[1][0], o = outs[0][0], sr = sampleRate;
-    const kA = Math.exp(-1 / (Math.max(0.01, p.decay[0]) * sr)), kN = Math.exp(-1 / (Math.max(0.005, p.decay[0] * 0.45) * sr)), kP = Math.exp(-1 / (0.035 * sr));
+    const kA = Math.exp(-1 / (Math.max(0.01, p.decay[0]) * sr)), kN = Math.exp(-1 / (Math.max(0.005, p.decay[0] * 0.45) * sr)), kP = Math.exp(-1 / ((0.01 + 0.03 * p.sweep[0]) * sr));
     const f0 = p.pitch[0], sw = p.sweep[0] * 7, nz = p.noise[0], tone = 0.05 + p.tone[0] * 0.9;
     for (let i = 0; i < o.length; i++) {
       const tv = t ? t[i] : 0;
@@ -193,13 +193,87 @@ class Drum extends AudioWorkletProcessor {
       this.ph += f / sr;
       this.lp += tone * (Math.random() * 2 - 1 - this.lp);
       const body = Math.sin(2 * Math.PI * this.ph) * this.env, hiss = this.lp * this.ne * 1.6;
-      o[i] = Math.tanh((body * (1 - nz * 0.6) + hiss * nz) * 1.4);
+      o[i] = Math.tanh((body * (1 - nz * 0.6) + hiss * nz) * 1.1);
       this.env *= kA; this.ne *= kN; this.pe *= kP;
     }
     return true;
   }
 }
 registerProcessor('oc-drum', Drum);
+
+// break machine: a 16-step grid of kick, snare and hat, played with short acoustic-ish voices.
+// Chop replays another step of the break (or stutters the last one), ratchet retriggers inside a step.
+class Breaks extends AudioWorkletProcessor {
+  static get parameterDescriptors() {
+    return [['chop', 0], ['ratchet', 0], ['kick', 62], ['snare', 0.5], ['hat', 0.05], ['lvl', 0.8]]
+      .map(([name, d]) => ({ name, defaultValue: d, minValue: 0, maxValue: 1000, automationRate: 'k-rate' }));
+  }
+  constructor() {
+    super();
+    const z = () => new Array(16).fill(0);
+    this.grid = { k: z(), s: z(), h: z() };
+    this.step = -1; this.src = 0; this.pc = 0; this.pr = 0; this.n = 0; this.last = 0; this.period = sampleRate / 8; this.trigs = [];
+    this.k = { ph: 0, env: 0, pe: 0, click: 0 }; this.s = { env: 0, ne: 0, ph1: 0, ph2: 0, hp: 0, x: 0 }; this.h = { env: 0, x: 0 };
+    this.port.onmessage = (e) => { if (e.data.grid) this.grid = e.data.grid; };
+  }
+  hit(lane, vel) {
+    if (lane === 'k') { const k = this.k; k.env = vel; k.pe = 1; k.ph = 0; k.click = vel; }
+    else if (lane === 's') { this.s.env = vel; this.s.ne = vel; }
+    else this.h.env = vel;
+  }
+  process(ins, outs, p) {
+    const clk = ins[0][0], rst = ins[1][0], sr = sampleRate, O = outs.map((o) => o[0]);
+    const chop = p.chop[0], rat = p.ratchet[0], kf = p.kick[0], tone = p.snare[0], lvl = p.lvl[0];
+    const kA = Math.exp(-1 / (0.18 * sr)), kP = Math.exp(-1 / (0.012 * sr)), kC = Math.exp(-1 / (0.003 * sr));
+    const sT = Math.exp(-1 / (0.06 * sr)), sN = Math.exp(-1 / ((0.08 + 0.12 * tone) * sr)), hA = Math.exp(-1 / (Math.max(0.01, p.hat[0]) * sr));
+    let moved = false;
+    for (let i = 0; i < O[0].length; i++) {
+      this.n++;
+      const c = clk ? clk[i] : 0, r = rst ? rst[i] : 0;
+      if (rise(r, this.pr)) this.step = -1;
+      if (rise(c, this.pc)) {
+        if (this.last) this.period = Math.min(sr, this.n - this.last);
+        this.last = this.n;
+        this.step = (this.step + 1) % 16; moved = true;
+        let src = this.step;
+        if (Math.random() < chop) src = Math.random() < 0.5 ? this.src : Math.floor(Math.random() * 16);
+        this.src = src;
+        const reps = Math.random() < rat ? [2, 3, 4][Math.floor(Math.random() * 3)] : 1;
+        for (const lane of ['k', 's', 'h']) {
+          const v = this.grid[lane][src];
+          if (!v) continue;
+          const vel = v === 2 ? 0.32 : 1, n = lane === 'k' ? 1 : reps;
+          for (let j = 0; j < n; j++) this.trigs.push([this.n + Math.floor((j * this.period) / n), lane, j ? vel * (0.55 + 0.45 * (j / n)) : vel]);
+        }
+      }
+      this.pc = c; this.pr = r;
+      for (let t = this.trigs.length - 1; t >= 0; t--) if (this.trigs[t][0] <= this.n) { this.hit(this.trigs[t][1], this.trigs[t][2]); this.trigs.splice(t, 1); }
+      const nz = Math.random() * 2 - 1;
+      // kick: a short thud that drops from about 2.5 times its pitch, with a beater click
+      const k = this.k;
+      k.ph += (kf * (1 + 1.5 * k.pe)) / sr;
+      const kick = Math.sin(2 * Math.PI * k.ph) * k.env + nz * k.click * 0.3;
+      k.env *= kA; k.pe *= kP; k.click *= kC;
+      // snare: two body tones and a burst of bright noise
+      const s = this.s;
+      s.ph1 += 185 / sr; s.ph2 += 330 / sr;
+      s.hp = 0.62 * (s.hp + nz - s.x); s.x = nz;
+      const snare = (Math.sin(2 * Math.PI * s.ph1) * 0.6 + Math.sin(2 * Math.PI * s.ph2) * 0.4) * s.env * (0.9 - tone * 0.5) + s.hp * s.ne * (0.45 + tone * 0.6);
+      s.env *= sT; s.ne *= sN;
+      // hat: the difference of white noise keeps only its top end
+      const h = this.h, hat = (nz - h.x) * 0.45 * h.env;
+      h.x = nz; h.env *= hA;
+      O[1][i] = kick; O[2][i] = snare; O[3][i] = hat;
+      O[0][i] = Math.tanh((kick * 0.85 + snare * 0.7 + hat * 0.5) * lvl);
+      const on = this.step >= 0 && this.n - this.last < this.period * 0.5;
+      O[4][i] = on && this.grid.k[this.src] ? 1 : 0;
+      O[5][i] = on && this.grid.s[this.src] ? 1 : 0;
+    }
+    if (moved) this.port.postMessage([this.step, this.src]);
+    return true;
+  }
+}
+registerProcessor('oc-breaks', Breaks);
 
 // Karplus-Strong plucked string
 class Pluck extends AudioWorkletProcessor {
@@ -335,17 +409,20 @@ registerProcessor('oc-crush', Crush);
   const SW = (id, label, opts, def = 0) => ({ id, label, opts, def, sw: true });
   const J = (id, label) => ({ id, label });
   const out = (node, idx = 0) => ({ node, idx });
+  // the Amen break, one character per sixteenth: 1 a hit, 2 a ghost note
+  const AMEN = { k: '1010000000110000', s: '0000100202001002', h: '1010101010101010' };
+  const grid = (k, sn, hh) => Object.fromEntries([['k', k], ['s', sn], ['h', hh]].flatMap(([l, pat]) => [...pat].map((c, i) => [l + i, +c])));
 
   const DEFS = {
     clock: {
       name: 'Horloge', tag: 'CLK', hp: 4, cat: 'ctrl', custom: 'clock',
       controls: [K('bpm', 'Tempo', 30, 300, 110, { step: 1, fmt: F.bpm, size: 'l' }), SW('run', 'Marche', ['MARCHE', 'ARRÊT'])],
-      ins: [], outs: [J('x4', '1/16'), J('x2', '1/8'), J('x1', '1/4'), J('d2', '1/2')],
+      ins: [], outs: [J('x4', '1/16'), J('x2', '1/8'), J('x1', '1/4'), J('d2', '1/2'), J('d4', 'MESURE')],
       build(m) {
-        const n = worklet('oc-clock', 0, 4);
+        const n = worklet('oc-clock', 0, 5);
         n.port.onmessage = () => { m.flash('beat'); live.beatAt = performance.now(); };
         return {
-          ins: {}, outs: { x4: out(n, 0), x2: out(n, 1), x1: out(n, 2), d2: out(n, 3) },
+          ins: {}, outs: { x4: out(n, 0), x2: out(n, 1), x1: out(n, 2), d2: out(n, 3), d4: out(n, 4) },
           set(id, v) {
             if (id === 'bpm') n.parameters.get('bpm').setValueAtTime(v, AC.currentTime);
             else n.parameters.get('run').setValueAtTime(v ? 0 : 1, AC.currentTime);
@@ -391,6 +468,27 @@ registerProcessor('oc-crush', Crush);
         return {
           ins: { clk: out(n, 0), rst: out(n, 1) }, outs: { hit: out(n, 0), miss: out(n, 1) },
           set() { const v = m.values; n.port.postMessage({ n: v.n, k: min(v.k, v.n), rot: v.rot }); },
+        };
+      },
+    },
+    breaks: {
+      name: 'Boîte à breaks', tag: 'BRK', hp: 8, cat: 'ctrl', custom: 'breaks',
+      controls: [
+        ...[['k', AMEN.k], ['s', AMEN.s], ['h', AMEN.h]].flatMap(([l, pat]) => Array.from({ length: 16 }, (_, i) => SW(l + i, l + i, ['·', '●', '○'], +pat[i]))),
+        K('chop', 'Hachage', 0, 1, 0, { fmt: F.pct, size: 's' }), K('ratchet', 'Roulements', 0, 1, 0, { fmt: F.pct, size: 's' }),
+        K('kick', 'Gr. caisse', 40, 120, 62, { log: true, fmt: F.hz, size: 's' }), K('snare', 'Timbre', 0, 1, 0.5, { fmt: F.pct, size: 's' }),
+        K('hat', 'Charley', 0.015, 0.3, 0.05, { log: true, fmt: F.s, size: 's' }), K('lvl', 'Niveau', 0, 1.5, 0.8, { fmt: F.pct, size: 's' }),
+      ],
+      ins: [J('clk', 'HORL.'), J('rst', 'RAZ')],
+      outs: [J('mix', 'MIX'), J('k', 'G.C.'), J('s', 'C.C.'), J('h', 'CH.'), J('gk', 'P. G.C.'), J('gs', 'P. C.C.')],
+      build(m) {
+        const n = worklet('oc-breaks', 2, 6);
+        n.port.onmessage = (e) => m.step(e.data);
+        const lane = (l) => Array.from({ length: 16 }, (_, i) => m.values[l + i]);
+        return {
+          ins: { clk: out(n, 0), rst: out(n, 1) },
+          outs: { mix: out(n, 0), k: out(n, 1), s: out(n, 2), h: out(n, 3), gk: out(n, 4), gs: out(n, 5) },
+          set(id, v) { if (/^[ksh]\d+$/.test(id)) n.port.postMessage({ grid: { k: lane('k'), s: lane('s'), h: lane('h') } }); else setP(n, id, v); },
         };
       },
     },
@@ -704,8 +802,8 @@ registerProcessor('oc-crush', Crush);
 
   const CAT = { ctrl: 'var(--yellow)', mod: 'var(--sage)', src: 'var(--ochre)', shape: 'var(--blue)', fx: 'var(--red)', util: 'var(--lilac)' };
   const RACK = [
-    ['clock', 'clock'], ['seq', 'seq'], ['keys', 'keys'], ['euclid', 'euclid'], ['lfo1', 'lfo'], ['lfo2', 'lfo'], ['chaos', 'chaos'], ['sh', 'sh'], ['quant', 'quant'], null,
-    ['vco1', 'vco'], ['vco2', 'vco'], ['vco3', 'vco'], ['noise', 'noise'], ['mix', 'mix'], ['vcf1', 'vcf'], ['vcf2', 'vcf'], ['voice', 'voice'], ['adsr1', 'adsr'], ['adsr2', 'adsr'], ['vca1', 'vca'], ['vca2', 'vca'], null,
+    ['clock', 'clock'], ['seq', 'seq'], ['keys', 'keys'], ['breaks', 'breaks'], ['euclid', 'euclid'], ['lfo1', 'lfo'], ['lfo2', 'lfo'], ['chaos', 'chaos'], ['sh', 'sh'], null,
+    ['quant', 'quant'], ['vco1', 'vco'], ['vco2', 'vco'], ['vco3', 'vco'], ['noise', 'noise'], ['mix', 'mix'], ['vcf1', 'vcf'], ['vcf2', 'vcf'], ['voice', 'voice'], ['adsr1', 'adsr'], ['adsr2', 'adsr'], ['vca1', 'vca'], ['vca2', 'vca'], null,
     ['att', 'att'], ['pluck', 'pluck'], ['drum', 'drum'], ['ring', 'ring'], ['drive', 'drive'], ['fold', 'fold'], ['crush', 'crush'], ['chorus', 'chorus'], ['delay', 'delay'], ['reverb', 'reverb'], ['scope', 'scope'], ['out', 'out'],
   ];
 
@@ -720,9 +818,9 @@ registerProcessor('oc-crush', Crush);
     jungle: {
       name: 'Jungle de Lorenz',
       values: {
-        clock: { bpm: 132 }, euclid: { n: 16, k: 7, rot: 0 }, drum: { pitch: 52, sweep: 0.75, decay: 0.32, noise: 0.08, tone: 0.4 },
+        clock: { bpm: 132 }, euclid: { n: 16, k: 7, rot: 0 }, drum: { pitch: 56, sweep: 0.5, decay: 0.28, noise: 0.1, tone: 0.4 },
         chaos: { rate: 0.35, rho: 28 }, pluck: { oct: -1, decay: 0.75, bright: 0.55 }, voice: { vowel: 1.5, cv: 1.8, q: 0.6 },
-        drive: { drive: 6, lvl: 0.6 }, delay: { time: 0.34, fb: 0.5, tone: 3000, mix: 0.35 }, reverb: { size: 5, damp: 0.35, mix: 0.35 },
+        drive: { drive: 2.5, lvl: 0.55 }, delay: { time: 0.34, fb: 0.5, tone: 3000, mix: 0.35 }, reverb: { size: 5, damp: 0.35, mix: 0.35 },
         adsr2: { a: 0.001, d: 0.04, s: 0, r: 0.03 }, vca2: { cv: 0.35 }, vcf2: { freq: 8000, mode: 2, res: 0.2 }, out: { vol: 0.55 }, scope: { time: 700 },
       },
       cables: [['clock.x4', 'euclid.clk'], ['euclid.hit', 'drum.trig'], ['drum.out', 'drive.in'], ['drive.out', 'out.mix'],
@@ -781,39 +879,36 @@ registerProcessor('oc-crush', Crush);
     drill: {
       name: 'Drill & bass',
       values: {
-        clock: { bpm: 172 }, euclid: { n: 16, k: 6, rot: 0 }, seq: seqVals([0, 12, 3, 10, 7, 15, 5, 0], '00001001'),
-        drum: { pitch: 50, sweep: 0.85, decay: 0.25, noise: 0.05, tone: 0.3 }, drive: { drive: 5, lvl: 0.75 },
-        vcf2: { freq: 1900, res: 0.25, mode: 1 }, adsr2: { a: 0.001, d: 0.11, s: 0, r: 0.09 }, vca2: { cv: 0.9 },
-        crush: { bits: 9, down: 2 }, delay: { time: 0.087, fb: 0.4, tone: 5000, mix: 0.35 }, lfo2: { rate: 0.35, amp: 0.12 },
-        vco1: { oct: -2 }, mix: { l1: 0.8, l2: 0.6 }, vcf1: { freq: 200, res: 0.55, cv1: 3 }, adsr1: { a: 0.002, d: 0.18, s: 0.15, r: 0.08 },
-        pluck: { oct: 2, decay: 0.05, bright: 1 }, att: { a2: 0.35 }, reverb: { size: 0.9, damp: 0.3, mix: 0.3 },
+        clock: { bpm: 172 },
+        breaks: { ...grid(AMEN.k, AMEN.s, AMEN.h), chop: 0.35, ratchet: 0.3, kick: 58, snare: 0.6, hat: 0.04, lvl: 0.75 },
+        crush: { bits: 8, down: 3 }, delay: { time: 0.087, fb: 0.35, tone: 5000, mix: 0.9 }, lfo2: { rate: 0.35, amp: 0.12 },
+        seq: seqVals([0, 0, 12, 0, 3, 0, 10, 7], '10110101'),
+        vco1: { oct: -2 }, mix: { l1: 0.8, l2: 0.6 }, vcf1: { freq: 220, res: 0.55, cv1: 3 }, adsr1: { a: 0.002, d: 0.15, s: 0.1, r: 0.06 },
+        euclid: { n: 16, k: 5, rot: 3 }, pluck: { oct: 2, decay: 0.05, bright: 1 }, att: { a2: 0.3 }, reverb: { size: 0.9, damp: 0.3, mix: 0.3 },
         out: { vol: 0.6 }, scope: { time: 1200 },
       },
-      cables: [['clock.x4', 'euclid.clk'], ['clock.d2', 'euclid.rst'], ['euclid.hit', 'drum.trig'], ['drum.out', 'drive.in'], ['drive.out', 'out.mix'],
-        ['clock.x4', 'seq.clk'], ['clock.d2', 'seq.rst'], ['seq.gate', 'adsr2.gate'], ['noise.white', 'vcf2.in'], ['vcf2.out', 'vca2.in'], ['adsr2.env', 'vca2.cv'],
-        ['vca2.out', 'crush.in'], ['crush.out', 'delay.in'], ['lfo2.sqr', 'delay.time'], ['delay.out', 'out.mix'],
-        ['seq.pitch', 'vco1.pitch'], ['vco1.saw', 'mix.in1'], ['vco1.sub', 'mix.in2'], ['mix.out', 'vcf1.in'], ['euclid.hit', 'adsr1.gate'],
-        ['adsr1.env', 'vcf1.cv1'], ['adsr1.env', 'vca1.cv'], ['vcf1.out', 'vca1.in'], ['vca1.out', 'out.mix'],
-        ['clock.x4', 'sh.trig'], ['sh.out', 'pluck.pitch'], ['euclid.miss', 'pluck.trig'], ['pluck.out', 'att.in2'], ['att.out2', 'reverb.in'], ['reverb.out', 'out.mix'],
-        ['drum.out', 'scope.a'], ['vca1.out', 'scope.b']],
+      cables: [['clock.x4', 'breaks.clk'], ['clock.d4', 'breaks.rst'], ['breaks.mix', 'out.mix'],
+        ['breaks.s', 'crush.in'], ['crush.out', 'delay.in'], ['lfo2.sqr', 'delay.time'], ['delay.out', 'out.mix'],
+        ['clock.x4', 'seq.clk'], ['clock.d2', 'seq.rst'], ['seq.pitch', 'vco1.pitch'], ['vco1.saw', 'mix.in1'], ['vco1.sub', 'mix.in2'], ['mix.out', 'vcf1.in'],
+        ['seq.gate', 'adsr1.gate'], ['adsr1.env', 'vcf1.cv1'], ['adsr1.env', 'vca1.cv'], ['vcf1.out', 'vca1.in'], ['vca1.out', 'out.mix'],
+        ['clock.x4', 'euclid.clk'], ['clock.d4', 'euclid.rst'], ['euclid.hit', 'pluck.trig'], ['clock.x4', 'sh.trig'], ['sh.out', 'pluck.pitch'],
+        ['pluck.out', 'att.in2'], ['att.out2', 'reverb.in'], ['reverb.out', 'out.mix'],
+        ['breaks.mix', 'scope.a'], ['vca1.out', 'scope.b']],
     },
     breaks: {
       name: 'Breakbeat',
       values: {
-        clock: { bpm: 132 }, euclid: { n: 16, k: 3, rot: 0 }, seq: seqVals([0, 12, 5, 7, 12, 0, 3, 10], '00001001'),
-        drum: { pitch: 58, sweep: 0.6, decay: 0.35, noise: 0.12, tone: 0.5 }, drive: { drive: 3, lvl: 0.8 },
-        vcf2: { freq: 1500, res: 0.2, mode: 1 }, adsr2: { a: 0.001, d: 0.16, s: 0, r: 0.12 }, vca2: { cv: 0.9 },
-        reverb: { size: 1.2, damp: 0.4, mix: 0.25 },
+        clock: { bpm: 128 },
+        breaks: { ...grid('1000000100100000', '0000100002001020', '1212121212121212'), ratchet: 0.04, kick: 64, snare: 0.45, hat: 0.045, lvl: 0.8 },
+        reverb: { size: 1.1, damp: 0.4, mix: 0.6 },
+        seq: seqVals([0, 0, 0, 10, 0, 0, 7, 0], '10010010'),
         vco1: { oct: -2 }, mix: { l1: 0.8, l2: 0.6 }, vcf1: { freq: 500, res: 0.25, cv1: 1.5 }, adsr1: { a: 0.003, d: 0.3, s: 0.3, r: 0.15 },
-        pluck: { oct: 2, decay: 0.1, bright: 0.9 }, att: { a2: 0.3 }, out: { vol: 0.6 }, scope: { time: 1200 },
+        out: { vol: 0.6 }, scope: { time: 1200 },
       },
-      cables: [['clock.x4', 'euclid.clk'], ['euclid.hit', 'drum.trig'], ['drum.out', 'drive.in'], ['drive.out', 'out.mix'],
-        ['clock.x4', 'seq.clk'], ['clock.d2', 'seq.rst'], ['seq.gate', 'adsr2.gate'], ['noise.white', 'vcf2.in'], ['vcf2.out', 'vca2.in'], ['adsr2.env', 'vca2.cv'],
-        ['vca2.out', 'reverb.in'], ['reverb.out', 'out.mix'],
-        ['seq.pitch', 'vco1.pitch'], ['vco1.tri', 'mix.in1'], ['vco1.sub', 'mix.in2'], ['mix.out', 'vcf1.in'], ['euclid.hit', 'adsr1.gate'],
-        ['adsr1.env', 'vcf1.cv1'], ['adsr1.env', 'vca1.cv'], ['vcf1.out', 'vca1.in'], ['vca1.out', 'out.mix'],
-        ['clock.x2', 'pluck.trig'], ['pluck.out', 'att.in2'], ['att.out2', 'out.mix'],
-        ['drum.out', 'scope.a'], ['vca1.out', 'scope.b']],
+      cables: [['clock.x4', 'breaks.clk'], ['clock.d4', 'breaks.rst'], ['breaks.mix', 'out.mix'], ['breaks.s', 'reverb.in'], ['reverb.out', 'out.mix'],
+        ['clock.x4', 'seq.clk'], ['clock.d2', 'seq.rst'], ['seq.pitch', 'vco1.pitch'], ['vco1.tri', 'mix.in1'], ['vco1.sub', 'mix.in2'], ['mix.out', 'vcf1.in'],
+        ['seq.gate', 'adsr1.gate'], ['adsr1.env', 'vcf1.cv1'], ['adsr1.env', 'vca1.cv'], ['vcf1.out', 'vca1.in'], ['vca1.out', 'out.mix'],
+        ['breaks.mix', 'scope.a'], ['vca1.out', 'scope.b']],
     },
     cloches: {
       name: 'Cloches et bruit',
@@ -943,6 +1038,7 @@ registerProcessor('oc-crush', Crush);
 
     if (d.custom === 'seq') renderSeq(m, body, ctrl);
     else if (d.custom === 'keys') renderKeys(m, body, ctrl);
+    else if (d.custom === 'breaks') renderBreaks(m, body, ctrl);
     else {
       if (d.custom === 'scope') { m.canvas = h('canvas', { class: 'scope', role: 'img', 'aria-label': 'Écran de l’oscilloscope' }); body.append(m.canvas); }
       if (d.custom === 'chaos') renderChaos(m, body);
@@ -996,6 +1092,26 @@ registerProcessor('oc-crush', Crush);
     row.append(ctrl(m.def.controls[16]));
     body.append(row);
     m.step = (s) => leds.forEach((l, i) => l.classList.toggle('on', i === s));
+  }
+
+  // the break grid: click a cell to cycle empty, hit, ghost note. The playhead runs along the
+  // columns, and a chopped step lights up the column it was taken from.
+  function renderBreaks(m, body, ctrl) {
+    const g = h('div', { class: 'brk', role: 'group', 'aria-label': 'Motif de batterie, 16 pas' }), cells = [];
+    for (const [lane, name, full] of [['k', 'GC', 'Grosse caisse'], ['s', 'CC', 'Caisse claire'], ['h', 'CH', 'Charley']]) {
+      g.append(h('span', { class: 'brk__lane', title: full }, name));
+      for (let i = 0; i < 16; i++) {
+        const id = lane + i, b = h('button', { class: 'brk__cell' + (i % 4 === 0 ? ' is-beat' : ''), type: 'button', 'data-col': i });
+        m.ui[id] = (v) => { b.dataset.v = v; b.setAttribute('aria-label', `${full}, pas ${i + 1} : ${['vide', 'frappe', 'note fantôme'][v]}`); };
+        b.addEventListener('click', () => setValue(m, id, (m.values[id] + 1) % 3));
+        cells.push(b); g.append(b);
+      }
+    }
+    body.append(g);
+    const box = h('div', { class: 'ctrls' });
+    m.def.controls.filter((c) => !c.sw).forEach((c) => box.append(ctrl(c)));
+    body.append(box);
+    m.step = ([st, src]) => cells.forEach((b) => { const c = +b.dataset.col; b.classList.toggle('is-now', c === st); b.classList.toggle('is-chop', c === src && src !== st); });
   }
 
   // the euclidean ring: every step a dot, the pulses inked in, the playhead in red
