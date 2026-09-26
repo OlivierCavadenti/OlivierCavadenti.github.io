@@ -9,6 +9,7 @@ body_class: home
     <p class="label">Morlaix, planète Terre</p>
     <h1 class="hero__title" id="hero-title">Olivier<br>Cavadenti</h1>
     <p class="hero__lede">Docteur en data mining, freelance en IA. Je fabrique des agents, des outils et des jeux.</p>
+    <p class="hero__creds label"><span>INSA Lyon · LIRIS</span><span>Co-fondateur · Intellectuality</span></p>
   </div>
   <figure class="print hero__print">
     <canvas class="ink print__art" data-scene="planet" aria-hidden="true"></canvas>
@@ -44,12 +45,13 @@ body_class: home
         <p class="label">Journal de bord</p>
         <h2 class="h2" id="journal-title">Trajectoire</h2>
       </header>
+      <p class="journal__lede">Des parties de jeux vidéo aux agents, un même fil : comprendre les systèmes pour mieux les construire.</p>
       <ol class="log">
         {%- for e in site.data.timeline -%}
         <li><span class="log__when label">{{ e.when }}</span><span>{{ e.what }}</span></li>
         {%- endfor -%}
       </ol>
-      <p class="journal__aside">À bord aussi : synthés modulaires et Magic&nbsp;: The Gathering.</p>
+      <p class="journal__aside">À bord aussi : <a href="{{ '/synthe/' | relative_url }}">synthés modulaires</a> et Magic&nbsp;: The Gathering.</p>
     </div>
     <figure class="rhodan">
       <canvas class="ink rhodan__art" data-scene="sphereship" aria-hidden="true"></canvas>
@@ -61,6 +63,23 @@ body_class: home
   </div>
 </section>
 
+<section class="transmissions" id="travaux" aria-labelledby="travaux-title">
+  <header class="section-head">
+    <p class="label">Archives du laboratoire</p>
+    <h2 class="h2" id="travaux-title">Travaux de recherche</h2>
+  </header>
+  <ul class="posts posts--papers">
+    {%- for p in site.data.papers -%}
+    <li>
+      <a href="{{ p.url }}" target="_blank" rel="noopener">
+        <span><span class="posts__title">{{ p.title }}</span><span class="posts__venue">{{ p.venue }}</span></span>
+        <span class="label">{{ p.year }}</span>
+      </a>
+    </li>
+    {%- endfor -%}
+  </ul>
+</section>
+
 <section class="transmissions" aria-labelledby="blog-title">
   <header class="section-head">
     <p class="label">Transmissions</p>
@@ -70,7 +89,7 @@ body_class: home
     {%- for post in site.posts limit: 4 -%}
     <li>
       <a href="{{ post.url | relative_url }}">
-        <span class="posts__title">{{ post.title | escape }}</span>
+        <span><span class="posts__title">{{ post.title | escape }}</span>{% if post.teaser %}<span class="posts__venue">{{ post.teaser }}</span>{% endif %}</span>
         <time class="label" datetime="{{ post.date | date_to_xmlschema }}">{{ post.date | date: '%Y' }}</time>
       </a>
     </li>

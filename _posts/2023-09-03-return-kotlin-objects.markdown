@@ -3,6 +3,7 @@ layout: post
 title:  "Return Kotlin Objects from GPT Output"
 date:   2023-09-03
 categories: jekyll update
+teaser: "D'une réponse générée à des objets typés."
 ---
 
 # Code

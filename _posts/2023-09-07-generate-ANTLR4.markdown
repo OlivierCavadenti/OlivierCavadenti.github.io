@@ -3,6 +3,7 @@ layout: post
 title:  "Build Interpreters with ANTLR4 and GPT"
 date:   2023-09-07
 categories: jekyll update
+teaser: "Quand la construction de langages rencontre la génération."
 ---
 
 ANTLR4 is a fantastic tool to build interpreters. It is a parser generator that can generate parsers in many languages.

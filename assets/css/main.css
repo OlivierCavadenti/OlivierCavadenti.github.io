@@ -111,6 +111,8 @@ img, canvas { display: block; max-width: 100%; }
   text-shadow: 6px 6px 0 var(--red);
 }
 .hero__lede { margin: 0; max-width: 30ch; font-size: clamp(1.1rem, 2vw, 1.35rem); font-style: italic; }
+.hero__creds { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 22px; }
+.hero__creds span { border-top: 1.5px solid var(--ink); padding-top: 6px; }
 
 /* screen-print frame */
 .print { margin: 0; }
@@ -176,6 +178,7 @@ a.plate__link:hover { color: var(--ink); transform: translateY(-4px) rotate(-0.6
 .log li { display: grid; grid-template-columns: 130px 1fr; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--line); align-items: baseline; }
 .log__when { color: var(--blue-deep); }
 @media (max-width: 480px) { .log li { grid-template-columns: 1fr; gap: 2px; } }
+.journal__lede { margin: 0 0 24px; max-width: 34ch; font-size: 1.15rem; font-style: italic; }
 .journal__aside { margin: 22px 0 0; font-style: italic; color: var(--ink-soft); }
 .rhodan { margin: 0; }
 .rhodan__art { aspect-ratio: 1 / 1; max-width: 520px; margin: 0 auto; border: 3px solid var(--ink); box-shadow: 8px 8px 0 var(--ink); }
@@ -189,6 +192,11 @@ a.plate__link:hover { color: var(--ink); transform: translateY(-4px) rotate(-0.6
   padding: 18px 0; border-bottom: 1px solid var(--line); text-decoration: none;
 }
 .posts__title { font-family: var(--display); font-size: clamp(1.25rem, 2.4vw, 1.7rem); font-weight: 500; letter-spacing: -0.01em; transition: transform .25s; }
+.posts a > span:first-child { display: flex; flex-direction: column; gap: 4px; }
+.posts__venue { font-size: 0.95rem; font-style: italic; color: var(--ink-soft); transition: transform .25s; }
+.posts a:hover .posts__venue { transform: translateX(8px); }
+.posts--papers .posts__title { font-size: clamp(1.1rem, 2vw, 1.4rem); }
+.transmissions + .transmissions { padding-top: clamp(48px, 7vw, 80px); }
 .posts a:hover .posts__title { transform: translateX(8px); color: var(--blue-deep); }
 
 /* ---------- Contact ---------- */

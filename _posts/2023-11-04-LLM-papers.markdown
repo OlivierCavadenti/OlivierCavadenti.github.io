@@ -3,6 +3,7 @@ layout: post
 title:  "LLM Papers"
 date:   2023-11-04
 categories: jekyll update
+teaser: "Un carnet de lecture sur la recherche en grands modèles de langage."
 ---
 
 ## Surveys

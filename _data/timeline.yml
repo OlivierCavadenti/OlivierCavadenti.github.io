@@ -1,9 +1,9 @@
 # Journal de bord : une ligne par étape.
-- when: "2016"
-  what: Docteur en fouille de données, INSA Lyon / LIRIS.
+- when: "2013 → 2016"
+  what: Doctorat en fouille de données, INSA Lyon / LIRIS, en CIFRE avec Actemium.
 - when: "2016 → 2023"
-  what: Ingénieur full-stack en CDI. Java, Kotlin, Node, Python.
+  what: "Ingénieur full-stack : Prosol, Business Geografic, Kuzzle. Java, Kotlin, Node, Python."
 - when: "2024 →"
-  what: Freelance IA. LLM, RAG et agents.
-- when: "2025"
-  what: Co-fondateur d'Intellectuality, à Dijon.
+  what: Freelance IA. RAG, LLM et agents pour Passerel, Diginov, Smartfire.
+- when: "2025 →"
+  what: Co-fondateur d'Intellectuality, direction scientifique.

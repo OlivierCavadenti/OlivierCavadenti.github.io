@@ -1,0 +1,61 @@
+---
+layout: default
+title: Synthétiseur modulaire
+description: "Un synthétiseur modulaire complet dans le navigateur : 33 modules à câbler, oscillateurs, filtres, chaos de Lorenz, rythmes euclidiens, corde pincée, écho et réverbération."
+permalink: /synthe/
+body_class: synth-page
+extra_css:
+  - /assets/css/synth.css
+extra_js:
+  - /assets/js/synth.js
+---
+<section class="synth-intro" aria-labelledby="synth-title">
+  <div class="synth-intro__text">
+    <p class="label">Atelier sonore · à bord</p>
+    <h1 class="synth-title" id="synth-title">Synthétiseur<br>modulaire</h1>
+    <p class="synth-lede">Loin du clavier d’ordinateur, je relie des modules par des câbles pour fabriquer des sons. Celui-ci tourne dans votre navigateur : 33 modules, de vrais câbles, du vrai son. Tirez un câble d’une sortie vers une entrée, tournez les boutons, jouez au clavier.</p>
+
+    <div class="console">
+      <button class="power" type="button" data-power aria-pressed="false">Allumer</button>
+      <div class="console__row" role="group" aria-label="Patchs prêts à jouer">
+        <span class="label">Patchs</span>
+        <button class="btn btn--ghost" type="button" data-preset="jungle" aria-pressed="false">Jungle de Lorenz</button>
+        <button class="btn btn--ghost" type="button" data-preset="signal" aria-pressed="false">Basse acide</button>
+        <button class="btn btn--ghost" type="button" data-preset="nappe" aria-pressed="false">Nappe cosmique</button>
+        <button class="btn btn--ghost" type="button" data-preset="hasard" aria-pressed="false">Machine à hasard</button>
+        <button class="btn btn--ghost" type="button" data-preset="bourdon" aria-pressed="false">Bourdon chaotique</button>
+        <button class="btn btn--ghost" type="button" data-preset="cloches" aria-pressed="false">Cloches et bruit</button>
+      </div>
+      <div class="console__row" role="group" aria-label="Outils">
+        <span class="label">Outils</span>
+        <button class="btn btn--ghost" type="button" data-action="mutate">Muter</button>
+        <button class="btn btn--ghost rec" type="button" data-action="rec" aria-pressed="false">Enregistrer</button>
+        <button class="btn btn--ghost" type="button" data-action="share">Copier le lien</button>
+        <button class="btn btn--ghost" type="button" data-action="ghost" aria-pressed="false">Câbles translucides</button>
+        <button class="btn btn--ghost" type="button" data-action="clear">Tout débrancher</button>
+      </div>
+      <p class="synth-status" id="synth-status" role="status" aria-live="polite"></p>
+    </div>
+  </div>
+
+  <figure class="print synth-print">
+    <canvas class="ink print__art" data-scene="listener" aria-hidden="true"></canvas>
+    <figcaption class="print__cap"><span>Épreuve sonore</span><span>elle écoute la sortie</span></figcaption>
+  </figure>
+</section>
+
+<div class="rack-wrap">
+  <div class="rack" id="rack" tabindex="-1" aria-label="Rack de modules">
+    <svg class="cables" id="cables" aria-hidden="true"></svg>
+  </div>
+</div>
+
+<section class="synth-help" aria-labelledby="help-title">
+  <h2 class="label" id="help-title">Mode d’emploi</h2>
+  <ul>
+    <li><b>Câbler.</b> Glissez d’une sortie (cases noires) vers une entrée. Reprenez un câble par son entrée pour le déplacer, lâchez-le dans le vide pour le retirer. Double-clic sur une prise : tout débrancher.</li>
+    <li><b>Régler.</b> Glissez un bouton vers le haut ou le bas, Maj pour affiner, double-clic pour revenir au réglage d’origine. Les flèches du clavier marchent aussi.</li>
+    <li><b>Tout est signal.</b> Une sortie audio peut moduler une hauteur, une enveloppe peut ouvrir un filtre, l’attracteur de Lorenz peut devenir un oscillateur. Un limiteur protège vos oreilles.</li>
+  </ul>
+</section>
+  
