@@ -778,6 +778,43 @@ registerProcessor('oc-crush', Crush);
         ['vcf1.out', 'out.l'], ['vcf2.out', 'voice.in'], ['lfo1.tri', 'voice.cv'], ['voice.out', 'out.r'], ['vcf1.out', 'reverb.in'], ['voice.out', 'reverb.in'],
         ['reverb.out', 'out.mix'], ['chaos.x', 'scope.a'], ['chaos.y', 'scope.b']],
     },
+    drill: {
+      name: 'Drill & bass',
+      values: {
+        clock: { bpm: 172 }, euclid: { n: 16, k: 6, rot: 0 }, seq: seqVals([0, 12, 3, 10, 7, 15, 5, 0], '00001001'),
+        drum: { pitch: 50, sweep: 0.85, decay: 0.25, noise: 0.05, tone: 0.3 }, drive: { drive: 5, lvl: 0.75 },
+        vcf2: { freq: 1900, res: 0.25, mode: 1 }, adsr2: { a: 0.001, d: 0.11, s: 0, r: 0.09 }, vca2: { cv: 0.9 },
+        crush: { bits: 9, down: 2 }, delay: { time: 0.087, fb: 0.4, tone: 5000, mix: 0.35 }, lfo2: { rate: 0.35, amp: 0.12 },
+        vco1: { oct: -2 }, mix: { l1: 0.8, l2: 0.6 }, vcf1: { freq: 200, res: 0.55, cv1: 3 }, adsr1: { a: 0.002, d: 0.18, s: 0.15, r: 0.08 },
+        pluck: { oct: 2, decay: 0.05, bright: 1 }, att: { a2: 0.35 }, reverb: { size: 0.9, damp: 0.3, mix: 0.3 },
+        out: { vol: 0.6 }, scope: { time: 1200 },
+      },
+      cables: [['clock.x4', 'euclid.clk'], ['clock.d2', 'euclid.rst'], ['euclid.hit', 'drum.trig'], ['drum.out', 'drive.in'], ['drive.out', 'out.mix'],
+        ['clock.x4', 'seq.clk'], ['clock.d2', 'seq.rst'], ['seq.gate', 'adsr2.gate'], ['noise.white', 'vcf2.in'], ['vcf2.out', 'vca2.in'], ['adsr2.env', 'vca2.cv'],
+        ['vca2.out', 'crush.in'], ['crush.out', 'delay.in'], ['lfo2.sqr', 'delay.time'], ['delay.out', 'out.mix'],
+        ['seq.pitch', 'vco1.pitch'], ['vco1.saw', 'mix.in1'], ['vco1.sub', 'mix.in2'], ['mix.out', 'vcf1.in'], ['euclid.hit', 'adsr1.gate'],
+        ['adsr1.env', 'vcf1.cv1'], ['adsr1.env', 'vca1.cv'], ['vcf1.out', 'vca1.in'], ['vca1.out', 'out.mix'],
+        ['clock.x4', 'sh.trig'], ['sh.out', 'pluck.pitch'], ['euclid.miss', 'pluck.trig'], ['pluck.out', 'att.in2'], ['att.out2', 'reverb.in'], ['reverb.out', 'out.mix'],
+        ['drum.out', 'scope.a'], ['vca1.out', 'scope.b']],
+    },
+    breaks: {
+      name: 'Breakbeat',
+      values: {
+        clock: { bpm: 132 }, euclid: { n: 16, k: 3, rot: 0 }, seq: seqVals([0, 12, 5, 7, 12, 0, 3, 10], '00001001'),
+        drum: { pitch: 58, sweep: 0.6, decay: 0.35, noise: 0.12, tone: 0.5 }, drive: { drive: 3, lvl: 0.8 },
+        vcf2: { freq: 1500, res: 0.2, mode: 1 }, adsr2: { a: 0.001, d: 0.16, s: 0, r: 0.12 }, vca2: { cv: 0.9 },
+        reverb: { size: 1.2, damp: 0.4, mix: 0.25 },
+        vco1: { oct: -2 }, mix: { l1: 0.8, l2: 0.6 }, vcf1: { freq: 500, res: 0.25, cv1: 1.5 }, adsr1: { a: 0.003, d: 0.3, s: 0.3, r: 0.15 },
+        pluck: { oct: 2, decay: 0.1, bright: 0.9 }, att: { a2: 0.3 }, out: { vol: 0.6 }, scope: { time: 1200 },
+      },
+      cables: [['clock.x4', 'euclid.clk'], ['euclid.hit', 'drum.trig'], ['drum.out', 'drive.in'], ['drive.out', 'out.mix'],
+        ['clock.x4', 'seq.clk'], ['clock.d2', 'seq.rst'], ['seq.gate', 'adsr2.gate'], ['noise.white', 'vcf2.in'], ['vcf2.out', 'vca2.in'], ['adsr2.env', 'vca2.cv'],
+        ['vca2.out', 'reverb.in'], ['reverb.out', 'out.mix'],
+        ['seq.pitch', 'vco1.pitch'], ['vco1.tri', 'mix.in1'], ['vco1.sub', 'mix.in2'], ['mix.out', 'vcf1.in'], ['euclid.hit', 'adsr1.gate'],
+        ['adsr1.env', 'vcf1.cv1'], ['adsr1.env', 'vca1.cv'], ['vcf1.out', 'vca1.in'], ['vca1.out', 'out.mix'],
+        ['clock.x2', 'pluck.trig'], ['pluck.out', 'att.in2'], ['att.out2', 'out.mix'],
+        ['drum.out', 'scope.a'], ['vca1.out', 'scope.b']],
+    },
     cloches: {
       name: 'Cloches et bruit',
       values: {
@@ -987,7 +1024,7 @@ registerProcessor('oc-crush', Crush);
     const pts = [];
     m.trail = (p) => { pts.push(p); if (pts.length > 260) pts.shift(); };
     m.drawTrail = () => {
-      const g = cv.getContext('2d'), dpr = min(2, window.devicePixelRatio || 1), W = cv.clientWidth, H = cv.clientHeight;
+      const g = cv.getContext('2d'), dpr = min(1.5, window.devicePixelRatio || 1), W = cv.clientWidth, H = cv.clientHeight;
       if (!W || !H) return;
       if (cv.width !== round(W * dpr)) { cv.width = round(W * dpr); cv.height = round(H * dpr); }
       g.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -1291,7 +1328,7 @@ registerProcessor('oc-crush', Crush);
   const EDGES = [40, 80, 160, 320, 640, 1280, 2560, 5120, 10240, 20000];
   function drawScope() {
     const m = byId.scope, cv = m.canvas, g = cv.getContext('2d');
-    const dpr = min(2, window.devicePixelRatio || 1), W = cv.clientWidth, H = cv.clientHeight;
+    const dpr = min(1.5, window.devicePixelRatio || 1), W = cv.clientWidth, H = cv.clientHeight;
     if (!W || !H) return;
     if (cv.width !== round(W * dpr)) { cv.width = round(W * dpr); cv.height = round(H * dpr); }
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -1345,18 +1382,25 @@ registerProcessor('oc-crush', Crush);
       let pk = 0;
       for (let i = 0; i < 256; i += 2) pk = max(pk, abs(bufM[i]));
       c.lvl = max(min(1, pk), c.lvl * 0.86);
-      c.off -= 1.2 + c.lvl * 3.5;
+      c.off -= 2.4 + c.lvl * 7;
       const p = c.el.paths[3];
       p.style.opacity = (0.1 + c.lvl * 0.9).toFixed(2);
       p.style.strokeDashoffset = c.off.toFixed(1);
       c.el.paths[1].style.strokeWidth = (4.6 + c.lvl * 1.8).toFixed(2);
     }
   }
+  // meters, scope and cable pulses refresh at ~30 fps, and only while the rack is on screen;
+  // the listening print keeps its level and spectrum either way
+  let rackSeen = true, lastUi = 0;
+  if ('IntersectionObserver' in window) new IntersectionObserver((es) => { rackSeen = es[0].isIntersecting; }, { rootMargin: '100px' }).observe(rack);
   function frame(now) {
     for (const c of state.cables) if (now - c.born < 2300) shape(c, now);
     if (AC && AC.state === 'running') {
-      drawScope(); listen(); pulses();
-      if (byId.chaos.drawTrail) byId.chaos.drawTrail();
+      if (now - lastUi > 32) {
+        lastUi = now;
+        listen();
+        if (rackSeen) { drawScope(); pulses(); if (byId.chaos.drawTrail) byId.chaos.drawTrail(); }
+      }
     } else live.level *= 0.9;
     requestAnimationFrame(frame);
   }

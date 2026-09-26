@@ -11,7 +11,7 @@
   const clamp = (v, a, b) => max(a, min(b, v));
 
   const INK = '#161616', WHITE = '#f7f4ec', RED = '#c1473b', YEL = '#f2c230', BLUE = '#8fb4de',
-    BLUED = '#3456a0', LILAC = '#b9b4c4', GREEN = '#a5c63b', ORANGE = '#e58a2f', MAROON = '#6e2a22',
+    BLUED = '#3456a0', SHADE = '#6f9bd1', LILAC = '#b9b4c4', GREEN = '#a5c63b', ORANGE = '#e58a2f', MAROON = '#6e2a22',
     PINK = '#e7a3a0';
   const MANA = ['#f7f0cf', '#6ea3d8', '#6d5a78', '#e0643f', '#79b35a'];
 
@@ -54,6 +54,7 @@
     return pts;
   }
 
+  const STIP = new Map();
   class Ink {
     constructor(g) { this.g = g; this.jk = 1; }
     j(x, y) { const k = 1.7 * this.jk; return [x + (hash(x * 0.37, y * 0.53, BOIL) - 0.5) * k, y + (hash(y * 0.41, x * 0.29, BOIL + 7) - 0.5) * k]; }
@@ -123,17 +124,29 @@
       }
       g.globalAlpha = 1;
     }
-    // engraved stippling on an ellipse, lit from the upper left
+    // engraved stippling on an ellipse, lit from the upper left. The dots only depend on the
+    // ellipse and the drawing scale, so they are drawn once into a small offscreen canvas and
+    // stamped afterwards: thousands of rectangles per frame otherwise.
     stip(cx, cy, rx, ry, { seed = 1, dens = 1, c = INK, s = 1.4 } = {}) {
-      const R = rng(seed), g = this.g, count = floor(rx * ry * 0.42 * dens);
-      g.fillStyle = c;
-      for (let k = 0; k < count; k++) {
-        const a = R() * TAU, rr = sqrt(R()), keep = R();
-        const nx = cos(a) * rr, ny = sin(a) * rr, nz = sqrt(max(0, 1 - rr * rr));
-        const lit = max(0, -0.5 * nx - 0.6 * ny + 0.62 * nz), dark = 1 - lit;
-        if (keep > dark * dark * 1.15) continue;
-        g.fillRect(cx + nx * rx - s / 2, cy + ny * ry - s / 2, s, s);
+      const k = this.k || 1, key = `${rx.toFixed(1)}|${ry.toFixed(1)}|${seed}|${dens}|${c}|${s}|${k.toFixed(3)}`;
+      let cv = STIP.get(key);
+      if (!cv) {
+        if (STIP.size > 160) STIP.clear();
+        cv = document.createElement('canvas');
+        cv.width = Math.ceil((2 * rx + 4) * k); cv.height = Math.ceil((2 * ry + 4) * k);
+        const g = cv.getContext('2d'), R = rng(seed), count = floor(rx * ry * 0.42 * dens);
+        g.setTransform(k, 0, 0, k, (rx + 2) * k, (ry + 2) * k);
+        g.fillStyle = c;
+        for (let i = 0; i < count; i++) {
+          const a = R() * TAU, rr = sqrt(R()), keep = R();
+          const nx = cos(a) * rr, ny = sin(a) * rr, nz = sqrt(max(0, 1 - rr * rr));
+          const lit = max(0, -0.5 * nx - 0.6 * ny + 0.62 * nz), dark = 1 - lit;
+          if (keep > dark * dark * 1.15) continue;
+          g.fillRect(nx * rx - s / 2, ny * ry - s / 2, s, s);
+        }
+        STIP.set(key, cv);
       }
+      this.g.drawImage(cv, cx - rx - 2, cy - ry - 2, cv.width / k, cv.height / k);
     }
     // ringed organic tube along a spine, stippled on its shadow side, optional black claw
     tube(sp, rf, { fill = WHITE, w = 2, bands = 1, stip = 1, seed = 1, claw = false, side = 1 } = {}) {
@@ -147,14 +160,14 @@
       this.draw(poly, { fill, w: 0, closed: true });
       if (stip) {
         g.save(); this.path(poly, true); g.clip();
-        const Rn = rng(seed), count = floor(n * 7 * rf(0.4) * stip);
+        const Rn = rng(seed), count = floor(n * 3.5 * rf(0.4) * stip);
         g.fillStyle = fill === INK ? WHITE : INK;
         for (let k = 0; k < count; k++) {
           const u = Rn(), v = Rn() * 2 - 1, keep = Rn();
           const dk = clamp(v * side * 0.85 + 0.3, 0, 1);
           if (keep > dk * dk) continue;
           const i = min(n - 1, floor(u * (n - 1))), d = dirAt(sp, i), r = rf(u);
-          g.fillRect(sp[i][0] - d[1] * r * v - 0.7, sp[i][1] + d[0] * r * v - 0.7, 1.4, 1.4);
+          g.fillRect(sp[i][0] - d[1] * r * v - 0.9, sp[i][1] + d[0] * r * v - 0.9, 1.8, 1.8);
         }
         g.restore();
       }
@@ -281,10 +294,17 @@
       ink.draw([P(sx * 0.7, -0.12), P(sx * 1.06, -0.3), P(sx * 0.98, -0.06), P(sx * 1.1, 0.12), P(sx * 0.94, 0.24), P(sx * 0.7, 0.3)], { fill: BLUED, closed: true, w: 2 });
       for (let k = 0; k < 3; k++) ink.line(...P(sx * 0.72, 0.02 + k * 0.1), ...P(sx * (1 - k * 0.03), -0.18 + k * 0.16), { w: 1.2, c: BLUE });
     }
-    ink.ell(gx, gy, hr * 0.8, hr, { fill: BLUE, w: 2.8, rot });
+    // skin in two flat tones, as on a screen print: the lit side, and a crescent of shade on the
+    // lower right edged with a few fine hatches
+    const [lx0, ly0] = P(-0.13, -0.1);
+    ink.ell(gx, gy, hr * 0.8, hr, { fill: SHADE, w: 0, rot });
     g.save(); ink.clipEll(gx, gy, hr * 0.8, hr, rot)(); g.clip();
-    ink.stip(gx, gy, hr * 0.8, hr, { seed: 5, dens: 0.6, c: BLUED, s: 1.6 });
+    ink.ell(lx0, ly0, hr * 0.76, hr * 0.97, { fill: BLUE, w: 0, rot });
+    g.beginPath(); g.ellipse(gx, gy, hr * 0.8, hr, rot, 0, TAU); g.ellipse(lx0, ly0, hr * 0.76, hr * 0.97, rot, 0, TAU);
+    g.clip('evenodd');
+    ink.hatch(() => { g.beginPath(); g.rect(gx - hr, gy - hr * 1.1, hr * 2, hr * 2.2); }, gx - hr, gy - hr * 1.1, hr * 2, hr * 2.2, { angle: 0.95, gap: 6.5, c: BLUED, lw: 1.1, alpha: 0.45 });
     g.restore();
+    ink.ell(gx, gy, hr * 0.8, hr, { w: 2.8, rot });
     // forehead folds
     ink.arc(...P(0, -0.5), hr * 0.3, hr * 0.07, Math.PI + 0.35, TAU - 0.35, { w: 1.4, alpha: 0.55, rot });
     ink.arc(...P(0, -0.6), hr * 0.2, hr * 0.05, Math.PI + 0.4, TAU - 0.4, { w: 1.2, alpha: 0.45, rot });
@@ -327,14 +347,17 @@
     const g = ink.g, top = [gx - 0.72 * hr * sin(rot), gy + 0.72 * hr * cos(rot)];
     const body = [[cx - 1.45 * hr, H + 80], [cx - 1.42 * hr, cy + 0.95 * hr], [cx - 1.28 * hr, cy + 0.42 * hr], [cx - 0.95 * hr, cy + 0.12 * hr],
       [cx - 0.45 * hr, cy], [cx + 0.45 * hr, cy], [cx + 0.95 * hr, cy + 0.12 * hr], [cx + 1.28 * hr, cy + 0.42 * hr], [cx + 1.42 * hr, cy + 0.95 * hr], [cx + 1.45 * hr, H + 80]];
-    ink.draw(body, { fill: BLUED, closed: true, w: 2.6 });
+    ink.draw(body, { fill: BLUED, closed: true, w: 0 });
     g.save(); ink.path(body, true); g.clip();
-    ink.stip(cx + 0.3 * hr, cy + 1.3 * hr, 1.5 * hr, 1.2 * hr, { seed: 4, dens: 0.3, c: INK });
+    const shade = [[cx + 0.62 * hr, cy + 0.02 * hr], [cx + 1.7 * hr, cy], [cx + 1.7 * hr, H + 80], [cx + 0.92 * hr, H + 80], [cx + 0.8 * hr, cy + 0.9 * hr], [cx + 0.7 * hr, cy + 0.35 * hr]];
+    ink.draw(shade, { fill: '#27427f', closed: true, w: 0 });
+    ink.hatch(() => ink.path(shade, true), cx + 0.6 * hr, cy, 1.1 * hr, H - cy + 80, { angle: -0.9, gap: 7, c: INK, lw: 1, alpha: 0.35 });
     g.restore();
+    ink.draw(body, { closed: true, w: 2.6 });
     for (const sx of [-1, 1]) ink.draw([[cx + sx * 0.92 * hr, cy + 0.14 * hr], [cx + sx * 0.84 * hr, cy + 0.6 * hr], [cx + sx * 0.9 * hr, cy + 1.2 * hr]], { w: 1.4, alpha: 0.7 });
     const orx = 0.5 * hr, ory = 0.15 * hr, irx = 0.3 * hr, iry = 0.07 * hr;
     ink.ell(cx, cy, orx, ory, { fill: YEL, w: 2.4 });
-    ink.tube([top, [(top[0] + cx) / 2, (top[1] + cy) / 2], [cx, cy]], () => 0.27 * hr, { fill: BLUE, bands: 0, stip: 0.5, seed: 6, side: 1, w: 2.4 });
+    ink.tube([top, [(top[0] + cx) / 2, (top[1] + cy) / 2], [cx, cy]], () => 0.27 * hr, { fill: BLUE, bands: 0, stip: 0, seed: 6, side: 1, w: 2.4 });
     const band = ellPts(cx, cy, orx, ory, 0, 0, 0, 0, Math.PI, false).concat(ellPts(cx, cy - ory * 0.5, irx, iry, 0, 0, 0, Math.PI, 0, false));
     ink.draw(band, { fill: YEL, closed: true, w: 2.2 });
     for (let k = 1; k < 6; k++) { const a = (k / 6) * Math.PI; ink.line(cx + cos(a) * irx, cy - ory * 0.5 + sin(a) * iry, cx + cos(a) * orx * 0.97, cy + sin(a) * ory * 0.95, { w: 1, alpha: 0.6 }); }
@@ -808,6 +831,7 @@
     g.setTransform(1, 0, 0, 1, 0, 0);
     g.clearRect(0, 0, sc.cv.width, sc.cv.height);
     g.setTransform(s * dpr, 0, 0, s * dpr, 0, 0);
+    sc.api.ink.k = s * dpr;
     g.lineJoin = 'round'; g.lineCap = 'round';
     BOIL = floor(t * 5) % 3;
     sc.draw(t);
@@ -832,12 +856,19 @@
     const size = () => {
       const cw = cv.clientWidth, ch = cv.clientHeight;
       if (!cw || !ch) return;
-      const dpr = min(2, window.devicePixelRatio || 1);
+      // 1.5× is plenty for trembling ink lines and saves half the pixels of a 2× screen
+      const dpr = min(1.5, window.devicePixelRatio || 1);
       cv.width = Math.round(cw * dpr); cv.height = Math.round(ch * dpr);
       api.dpr = dpr; api.s = cw / baseW; api.W = baseW; api.H = ch / api.s;
     };
     size();
-    const sc = { cv, api, draw: make(api), visible: !io, last: 0 };
+    // bestiary plates idle at a slower pace and wake up under the pointer
+    const plate = cv.closest('.plate');
+    const sc = { cv, api, draw: make(api), visible: !io, last: 0, pace: plate ? 240 : 100 };
+    if (plate) {
+      plate.addEventListener('pointerenter', () => { sc.pace = 95; });
+      plate.addEventListener('pointerleave', () => { sc.pace = 240; });
+    }
     scenes.push(sc);
     if (io) io.observe(cv);
     if ('ResizeObserver' in window) new ResizeObserver(() => { size(); render(sc, now()); }).observe(cv);
@@ -847,7 +878,7 @@
   function loop(ts) {
     const t = (ts - t0) / 1000;
     for (const sc of scenes) {
-      if (!sc.visible || ts - sc.last < 95) continue;
+      if (!sc.visible || ts - sc.last < sc.pace) continue;
       sc.last = ts;
       render(sc, t);
     }
