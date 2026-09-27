@@ -231,7 +231,7 @@ void main(){
      State
      ========================================================================== */
   const U = { time: 0, mix: 0, warp: 0.05, kal: 6, kalamt: 0, zoom: 1.35, spin: 0, tunnel: 0, field: 0, chroma: 0.002, hue: 0, dark: 1, beat: 0, grain: 0.07, mx: 0, my: 0 };
-  let root = null, stage, svg, glc, fallback, gl = null, tl = null, hud = {}, live;
+  let root = null, stage, svg, glc, fallback, gl = null, tl = null, hud = {}, live, pulse = null;
   let audio = null, actx = null, analyser = null, freq = null;
   const media = { img: {}, vid: {} };
   const S = { t: 0, playing: false, last: 0, raf: 0, chapter: -1, muted: false, from: null, open: false, level: 0 };
@@ -391,6 +391,7 @@ void main(){
       inKicker(k, 16.6); inTitle(t1, 17.0); inCap(c1, 18.4);
       outAll(sc, 24.1);
       const g = s('g', { class: 'od-beat' }, svg);
+      pulse = { el: g, from: 16, to: 25 };
       const ticks = [];
       [[330, 72, 26], [390, 120, 16], [440, 36, 40]].forEach(([r, n, len], j) => {
         const ring = s('g', {}, g);
@@ -402,8 +403,9 @@ void main(){
         tl.fromTo(ring, { rotation: 0 }, { rotation: (j % 2 ? -1 : 1) * 90 * K, duration: 9, ease: 'none' }, 16);
       });
       show(g, 16, 25);
-      tl.fromTo(ticks, { opacity: 0 }, { opacity: 0.9, duration: 0.2, stagger: { each: 0.006, from: 'random' } }, 16.3);
-      tl.to(ticks, { opacity: 0, duration: 0.25, stagger: { each: 0.003, from: 'random' } }, 24.2);
+      // stroke-opacity, not opacity: 228 translucent elements would each need their own compositing pass
+      tl.fromTo(ticks, { attr: { 'stroke-opacity': 0 } }, { attr: { 'stroke-opacity': 0.9 }, duration: 0.2, stagger: { each: 0.006, from: 'random' } }, 16.3);
+      tl.to(ticks, { attr: { 'stroke-opacity': 0 }, duration: 0.25, stagger: { each: 0.003, from: 'random' } }, 24.2);
     }
 
     /* ---- III · Fouiller les motifs -------------------------------------- */
@@ -842,7 +844,9 @@ void main(){
     syncVideos(S.t, i);
     syncAudio();
     U.beat = beat();
-    root.style.setProperty('--beat', U.beat.toFixed(3));
+    // only the element that pulses gets the beat: an inherited custom property on the root
+    // would restyle every letter span of every scene on every frame
+    if (pulse && S.t >= pulse.from && S.t < pulse.to) pulse.el.style.transform = `scale(${(1 + U.beat * 0.07).toFixed(4)})`;
     U.time = S.t * K;
     const mix = prev && cur.tr ? clamp((S.t - cur.at) / cur.tr, 0, 1) : 1;
     // live video frames go straight into their textures

@@ -8,7 +8,6 @@
   background: #161616; color: var(--paper-2);
   overflow: hidden; isolation: isolate;
   clip-path: circle(0% at var(--ox, 50%) var(--oy, 50%));
-  --beat: 0;
   --pad: clamp(16px, 5vw, 72px);
 }
 .od[hidden] { display: none; }
@@ -20,7 +19,7 @@
   position: absolute; inset: 0; pointer-events: none; mix-blend-mode: multiply; opacity: .5;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .12 0 0 0 0 .17 0 0 0 0 .18 0 0 0 .1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
-.od-beat { transform-origin: 800px 450px; transform: scale(calc(1 + var(--beat) * .07)); }
+.od-beat { transform-origin: 800px 450px; }   /* scaled to the music by parcours.js */
 
 /* ---------- scenes ---------- */
 .od-scene {
