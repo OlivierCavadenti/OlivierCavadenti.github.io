@@ -243,6 +243,22 @@
 .od__ltitle { margin: 0; font-family: var(--display); font-style: italic; font-weight: 700; font-variation-settings: "SOFT" 100, "WONK" 1; font-size: clamp(1.6rem, 4vw, 2.6rem); color: var(--yellow); }
 .od__lpct { margin: 0; font-family: var(--mono); font-size: .9rem; letter-spacing: .12em; color: var(--paper-2); font-variant-numeric: tabular-nums; }
 .od__lhint { margin: 14px 0 0; font-family: var(--mono); font-size: .68rem; letter-spacing: .12em; text-transform: uppercase; color: rgba(247, 244, 236, .6); }
+.od__lbar { width: min(64vw, 420px); height: 12px; margin-top: 6px; background: var(--paper-2); border: 2px solid var(--ink); box-shadow: 4px 4px 0 var(--ink); }
+.od__lbar span { display: block; height: 100%; transform-origin: 0 50%; transform: scaleX(0); transition: transform .2s linear;
+  background: linear-gradient(90deg, var(--red), var(--yellow), var(--sage), var(--blue), var(--lilac)); }
+/* with WebGL the shader itself is the loader: the type sits on it like a screen-printed sticker */
+.od__loader--gl { background: radial-gradient(circle at 50% 50%, rgba(22, 22, 22, .1) 0 22%, rgba(22, 22, 22, .6) 78%); }
+.od__loader--gl .od__disc { display: none; }
+.od__loader--gl .od__ltitle {
+  font-style: normal; font-weight: 900; font-variation-settings: "SOFT" 100, "WONK" 1, "opsz" 144;
+  font-size: clamp(2.2rem, 7vw, 5.4rem); line-height: .95; letter-spacing: -.03em;
+  -webkit-text-stroke: 2.5px var(--ink); paint-order: stroke fill; text-shadow: 5px 5px 0 var(--red);
+}
+.od__loader--gl .od__lpct {
+  padding: 4px 14px; font-size: clamp(1rem, 2.2vw, 1.3rem);
+  color: var(--ink); background: var(--yellow); border: 2px solid var(--ink); box-shadow: 4px 4px 0 var(--ink);
+}
+.od__loader--gl .od__lhint { padding: 6px 12px; color: var(--paper-2); background: var(--ink); }
 @keyframes od-spin { to { rotate: 360deg; } }
 @keyframes od-hue { to { filter: hue-rotate(360deg); } }
 

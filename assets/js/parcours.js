@@ -50,9 +50,17 @@
     s.len = next ? next.at - s.at : 12;
     s.rate = clamp(5.9 / s.len, 0.45, 1);     // stretch each 6 s clip over its shot
   });
-  const IMAGES = ['portal', 'face', 'games', 'eyes', 'cathedral', 'machines', 'oracle', 'draag', 'citadel', 'mandala'];
-  const VIDEOS = ['portal', 'eyes', 'machines', 'draag', 'mandala'];
-  const FIRST = ['portal', 'face', 'games'];
+  // every print and clip, in the order the journey needs them. Sizes (KB) only seed the progress
+  // and the arrival estimate until the real Content-Length comes in.
+  const KB = { portal: [327, 1984], face: [23], games: [561], eyes: [492, 2415], cathedral: [489], machines: [776, 1911], oracle: [678], draag: [369, 744], citadel: [596], mandala: [605, 1983] };
+  const ASSETS = [];
+  SHOTS.forEach((sh) => {
+    if (ASSETS.some((a) => a.name === sh.src)) return;
+    const asset = (kind, file, kb) => ({ name: sh.src, kind, file, at: sh.at, bytes: kb * 1024, got: 0, done: false });
+    ASSETS.push(asset('img', sh.src === 'face' ? 'face.jpg' : `${sh.src}.webp`, KB[sh.src][0]));
+    if (sh.video && !RM) ASSETS.push(asset('vid', `${sh.src}.mp4`, KB[sh.src][1]));
+  });
+  const OPENING = 7;                           // shots before this must be fully in before the lights go down
 
   /* ---------- dom helpers ---------- */
   const SVGNS = 'http://www.w3.org/2000/svg';
@@ -233,7 +241,7 @@ void main(){
   const U = { time: 0, mix: 0, warp: 0.05, kal: 6, kalamt: 0, zoom: 1.35, spin: 0, tunnel: 0, field: 0, chroma: 0.002, hue: 0, dark: 1, beat: 0, grain: 0.07, mx: 0, my: 0 };
   let root = null, stage, svg, glc, fallback, gl = null, tl = null, hud = {}, live, pulse = null;
   let audio = null, actx = null, analyser = null, freq = null;
-  const media = { img: {}, vid: {} };
+  const media = { img: {}, vid: {}, started: false, got: 0, t0: 0, rate: 0 };
   const S = { t: 0, playing: false, last: 0, raf: 0, chapter: -1, muted: false, from: null, open: false, level: 0 };
 
   /* ---------- scene building blocks ---------- */
@@ -703,32 +711,72 @@ void main(){
   /* ==========================================================================
      Media
      ========================================================================== */
-  function loadImage(n) {
-    if (media.img[n]) return media.img[n].p;
-    const im = new Image();
-    im.decoding = 'async';
-    const p = new Promise((res) => {
-      im.onload = () => { if (gl) gl.upload(n, im, im.naturalWidth, im.naturalHeight); res(); };
-      im.onerror = () => res();
-    });
-    im.src = ROOT + (n === 'face' ? 'face.jpg' : `${n}.webp`);
-    media.img[n] = { el: im, p };
-    return p;
+  // Downloaded two at a time in the order they appear, each one whole into memory: the shot at 16 s
+  // no longer shares the line with the one at 79 s, and seeking inside a clip never hits the network.
+  function stream() {
+    if (media.started) return;
+    media.started = true;
+    let next = 0;
+    const worker = async () => { while (next < ASSETS.length) await grab(ASSETS[next++]); };
+    worker(); worker();
   }
-  function loadVideo(n) {
-    if (RM || media.vid[n]) return media.vid[n] ? media.vid[n].p : Promise.resolve();
+  function tally(n) {
+    const now = performance.now();
+    if (!media.t0) media.t0 = now;
+    media.got += n;
+    media.rate = media.got / max(0.5, (now - media.t0) / 1000);
+  }
+  async function grab(a) {
+    let url = ROOT + a.file;
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const len = Number(res.headers.get('content-length'));
+      if (len) a.bytes = len;
+      let blob;
+      if (res.body && res.body.getReader) {
+        const rd = res.body.getReader(), parts = [];
+        for (;;) {
+          const { done, value } = await rd.read();
+          if (done) break;
+          parts.push(value); a.got += value.length; tally(value.length);
+        }
+        blob = new Blob(parts, { type: res.headers.get('content-type') || '' });
+      } else {
+        blob = await res.blob(); a.got = blob.size; tally(blob.size);
+      }
+      url = URL.createObjectURL(blob);
+    } catch (err) { /* fall back to letting the element stream it */ }
+    a.done = true;
+    attach(a, url);
+  }
+  function attach(a, url) {
+    if (a.kind === 'img') {
+      const im = new Image();
+      im.decoding = 'async';
+      im.onload = () => { if (gl) gl.upload(a.name, im, im.naturalWidth, im.naturalHeight); };
+      im.src = url;
+      media.img[a.name] = im;
+      return;
+    }
     const v = document.createElement('video');
-    v.muted = true; v.playsInline = true; v.preload = 'auto'; v.loop = n === 'mandala';
+    v.muted = true; v.playsInline = true; v.preload = 'auto'; v.loop = a.name === 'mandala';
     v.setAttribute('muted', ''); v.setAttribute('playsinline', '');
-    const p = new Promise((res) => {
-      v.addEventListener('loadeddata', res, { once: true });
-      v.addEventListener('error', res, { once: true });
-      setTimeout(res, 9000);
-    });
-    v.src = ROOT + `${n}.mp4`;
+    v.src = url;
     v.load();
-    media.vid[n] = { el: v, p };
-    return p;
+    media.vid[a.name] = { el: v };
+  }
+  // bytes that must still arrive before starting, so that at the measured rate every later shot
+  // lands before its time (the opening shots count in full)
+  function backlog() {
+    const rate = media.rate * 0.8;
+    let rem = 0, need = 0;
+    for (const a of ASSETS) {
+      if (a.done) continue;
+      rem += max(0, a.bytes - a.got);
+      need = max(need, rem - (a.at < OPENING ? 0 : rate * (a.at - 2)));
+    }
+    return need;
   }
   function loadAudio(given) {
     audio = audio || given || new Audio();
@@ -819,6 +867,7 @@ void main(){
     if (!S.open) return;
     const dt = S.last ? min(0.25, (ts - S.last) / 1000) : 0;
     S.last = ts;
+    if (S.loading) { loaderFrame(ts, dt); S.raf = requestAnimationFrame(frame); return; }
     // adaptive resolution: a struggling GPU renders fewer pixels rather than fewer frames
     // (26 fps floor, so phones capped at 30 Hz in low-power mode keep full resolution)
     if (S.playing) {
@@ -856,8 +905,11 @@ void main(){
       if (v && v.readyState >= 2 && v.videoWidth) gl.upload(sh.src, v, v.videoWidth, v.videoHeight);
     }
     if (gl) {
-      if (mix < 1) { U.mix = mix; gl.draw(W, H, U, prev, cur); }
-      else gl.draw(W, H, U, cur, null);
+      // a print that has not arrived yet leaves the last one that has on screen, never a blank
+      const shown = (k) => { while (k > 0 && !gl.has(SHOTS[k].src)) k--; return SHOTS[max(k, 0)]; };
+      const a = prev ? shown(i - 1) : null, b = shown(i);
+      if (a && a !== b && mix < 1) { U.mix = mix; gl.draw(W, H, U, a, b); }
+      else gl.draw(W, H, U, b, null);
     } else if (fallback) {
       const want = ROOT + (cur.src === 'face' ? 'face.jpg' : `${cur.src}.webp`);
       if (fallback.dataset.src !== want) { fallback.dataset.src = want; fallback.src = want; }
@@ -865,6 +917,39 @@ void main(){
     }
     hudUpdate();
     S.raf = requestAnimationFrame(frame);
+  }
+
+  /* ==========================================================================
+     Loader: the shader runs on its own while the prints come down. Contour bands through a
+     kaleidoscope and a tunnel, more mirrors as the load fills up, the posterised portal
+     print showing through near the end. Starts once the rest can arrive in time.
+     ========================================================================== */
+  const LU = { ...U, dark: 0, mix: 0, field: 1, warp: 0.3 * K, kal: 4, kalamt: K, tunnel: 0.3 * K, chroma: 0.01 * K, grain: 0.05, clock: 0 };
+  const LSHOT = { src: 'portal', poster: 1, scale: 0.7 };
+  function loaderFrame(ts, dt) {
+    const need = backlog();
+    let p = media.got / (media.got + need || 1);
+    if (!S.audioOk) p = min(p, 0.99);
+    S.disp = max(S.disp, S.disp + (p - S.disp) * 0.12);
+    const shownPct = need <= 0 && S.audioOk ? 100 : min(99, floor(S.disp * 100));
+    if (shownPct !== S.pct) {
+      S.pct = shownPct;
+      hud.lpct.textContent = `${shownPct} %`;
+      hud.lfill.style.transform = `scaleX(${shownPct / 100})`;
+    }
+    if (gl) {
+      const c = (LU.clock += dt * K);
+      LU.time = c;
+      LU.kal = 4 + S.disp * 8;
+      LU.field = 1 - 0.5 * S.disp * (gl.has('portal') ? 1 : 0);
+      LU.hue = c * 0.5;
+      LU.spin = c * 0.12;
+      LU.zoom = 1 + 0.06 * sin(c * 2.1);
+      LU.beat = (0.5 + 0.5 * sin(c * TAU * 1.2)) * K;
+      LU.mx = U.mx; LU.my = U.my;
+      gl.draw(W, H, LU, LSHOT, null);
+    }
+    if (S.gate && ((need <= 0 && S.audioOk) || ts - S.load0 > 45000)) { const go = S.gate; S.gate = null; go(); }
   }
 
   /* ==========================================================================
@@ -971,9 +1056,12 @@ void main(){
     });
 
     const loader = h('div', 'od__loader');
-    loader.innerHTML = '<div class="od__disc" aria-hidden="true"></div><p class="od__ltitle">Ouverture du portail</p><p class="od__lpct">0&nbsp;%</p><p class="od__lhint">Son conseillé · Espace pause · ← → chapitres · Échap pour revenir</p>';
+    loader.innerHTML = '<div class="od__disc" aria-hidden="true"></div><p class="od__ltitle">Ouverture du portail</p><p class="od__lpct">0&nbsp;%</p><div class="od__lbar" aria-hidden="true"><span></span></div><p class="od__lhint">Son conseillé · Espace pause · ← → chapitres · Échap pour revenir</p>';
+    if (gl) loader.classList.add('od__loader--gl');
     root.append(loader);
     hud.loader = loader;
+    hud.lpct = loader.querySelector('.od__lpct');
+    hud.lfill = loader.querySelector('.od__lbar span');
     live = h('p', 'od__live');
     live.setAttribute('aria-live', 'polite');
     root.append(live);
@@ -1032,23 +1120,21 @@ void main(){
     root.style.setProperty('--oy', `${y}px`);
     gsap.fromTo(root, { clipPath: `circle(0% at ${x}px ${y}px)` }, { clipPath: `circle(150% at ${x}px ${y}px)`, duration: RM ? 0.01 : 1.1, ease: 'expo.inOut' });
     hud.play.focus({ preventScroll: true });
-    S.t = 0; S.last = 0; S.chapter = -1;
+    S.t = 0; S.last = 0; S.chapter = -1; S.disp = 0; S.pct = -1;
     tl.time(0, false);
     setPlaying(false);
+    hud.loader.classList.remove('is-gone');
+    S.loading = true; S.load0 = performance.now();
     S.raf = requestAnimationFrame(frame);
 
-    // preload: the soundtrack and the first three shots gate the start, the rest streams behind
-    const need = [loadAudio(given), ...FIRST.map(loadImage), loadVideo('portal')];
-    let done = 0;
-    const pct = hud.loader.querySelector('.od__lpct');
-    need.forEach((p) => p.then(() => { done++; pct.textContent = `${round((done / need.length) * 100)} %`; }));
-    hud.loader.classList.remove('is-gone');
-    await Promise.all(need);
-    IMAGES.forEach(loadImage);
-    VIDEOS.forEach(loadVideo);
+    // the soundtrack streams on its own element; the prints and clips come down in order of appearance,
+    // and loaderFrame opens the gate once what is left can arrive before it is needed
+    loadAudio(given).then(() => { S.audioOk = true; });
+    stream();
+    await new Promise((res) => { S.gate = res; });
     if (!S.open) return;
     gsap.to(hud.loader, { autoAlpha: 0, scale: 1.2, duration: 0.6, ease: 'power2.in', onComplete: () => hud.loader.classList.add('is-gone') });
-    setTimeout(() => { if (S.open) { seek(0); setPlaying(true); } }, 450);
+    setTimeout(() => { if (S.open) { S.loading = false; seek(0); setPlaying(true); } }, 450);
   }
 
   function close() {
