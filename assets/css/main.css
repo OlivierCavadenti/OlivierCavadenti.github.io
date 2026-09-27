@@ -110,6 +110,53 @@ img, canvas { display: block; max-width: 100%; }
   paint-order: stroke fill;
   text-shadow: 6px 6px 0 var(--red);
 }
+/* « Mon parcours » launcher: a screen-print ticket with a spinning target disc */
+.launch {
+  position: relative;
+  display: inline-flex; align-items: center; gap: 18px;
+  margin: 0 0 30px; padding: 12px 28px 12px 12px;
+  font: inherit; color: var(--ink); text-align: left; cursor: pointer;
+  background: var(--yellow);
+  border: 2.5px solid var(--ink); border-radius: 999px;
+  box-shadow: 7px 7px 0 var(--red), 7px 7px 0 2.5px var(--ink);
+  transition: transform .2s cubic-bezier(.2,.8,.2,1), box-shadow .2s;
+}
+.launch::before {
+  content: ""; position: absolute; inset: -9px; border-radius: inherit; pointer-events: none;
+  border: 2px dashed var(--ink); opacity: 0; transition: opacity .2s;
+}
+.launch:hover { transform: translate(-3px, -3px) rotate(-1.2deg); box-shadow: 11px 11px 0 var(--blue-deep), 11px 11px 0 2.5px var(--ink); }
+.launch:hover::before, .launch:focus-visible::before { opacity: .5; }
+.launch:active { transform: translate(3px, 3px); box-shadow: 2px 2px 0 var(--red), 2px 2px 0 2.5px var(--ink); }
+.launch:focus-visible { outline: none; }
+.launch__disc {
+  position: relative; flex: none; display: grid; place-items: center;
+  width: 66px; height: 66px; border-radius: 50%; overflow: hidden;
+  border: 2.5px solid var(--ink);
+}
+.launch__disc::before {
+  content: ""; position: absolute; inset: -30%;
+  background: repeating-conic-gradient(from 0deg, rgba(22, 22, 22, .16) 0 10deg, transparent 10deg 20deg),
+    repeating-radial-gradient(circle, var(--red) 0 5px, var(--paper-2) 5px 8px, var(--blue-deep) 8px 13px, var(--sage) 13px 18px, var(--ochre) 18px 23px, var(--blue) 23px 28px);
+  animation: launch-spin 9s linear infinite;
+}
+.launch:hover .launch__disc::before { animation: launch-spin 2.2s linear infinite, launch-hue 1.8s linear infinite; }
+.launch__play {
+  position: relative;
+  display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%;
+  background: var(--ink); box-shadow: 0 0 0 3px var(--paper-2);
+}
+.launch__play::after { content: ""; margin-left: 3px; border-style: solid; border-width: 7px 0 7px 11px; border-color: transparent transparent transparent var(--yellow); }
+.launch__text { display: flex; flex-direction: column; gap: 4px; }
+.launch__title {
+  font-family: var(--display); font-weight: 900; font-variation-settings: "SOFT" 100, "WONK" 1, "opsz" 144;
+  font-size: clamp(1.7rem, 3vw, 2.35rem); line-height: .95; letter-spacing: -.02em;
+}
+.launch__sub { font-family: var(--mono); font-size: .66rem; letter-spacing: .12em; text-transform: uppercase; color: var(--ink); opacity: .8; }
+@keyframes launch-spin { to { rotate: 360deg; } }
+@keyframes launch-hue { to { filter: hue-rotate(360deg) saturate(1.4); } }
+@media (max-width: 420px) { .launch { gap: 12px; padding-right: 20px; } .launch__disc { width: 54px; height: 54px; } }
+
 .hero__lede { margin: 0; max-width: 30ch; font-size: clamp(1.1rem, 2vw, 1.35rem); font-style: italic; }
 .hero__creds { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 22px; }
 .hero__creds span { border-top: 1.5px solid var(--ink); padding-top: 6px; }

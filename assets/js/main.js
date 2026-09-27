@@ -1011,7 +1011,44 @@
     C: { INK, WHITE, RED, YEL, BLUE, BLUED, LILAC, GREEN, ORANGE, MAROON, PINK },
   };
 
+  /* ==========================================================================
+     « Mon parcours »: the journey (GSAP, shader, prints, soundtrack) loads only when asked for.
+     Hovering the button warms the scripts; the click unlocks sound inside the gesture,
+     since Safari only lets an element play if it first started from a tap.
+     ========================================================================== */
+  function parcours(btn) {
+    const add = (tag, attrs) => new Promise((res, rej) => {
+      const e = document.createElement(tag);
+      Object.assign(e, attrs);
+      e.onload = res; e.onerror = rej;
+      document.head.append(e);
+    });
+    let ready = null, audio = null, ctx = null;
+    const prep = () => ready || (ready = Promise.all([
+      add('link', { rel: 'stylesheet', href: '/assets/css/parcours.css' }),
+      window.gsap ? null : add('script', { src: '/assets/lib/gsap.min.js' }),
+    ]).then(() => window.OCParcours || add('script', { src: '/assets/js/parcours.js' }))
+      .catch((err) => { ready = null; throw err; }));
+    btn.addEventListener('pointerenter', () => { prep().catch(() => {}); }, { once: true });
+    btn.addEventListener('focus', () => { prep().catch(() => {}); }, { once: true });
+    btn.addEventListener('click', () => {
+      if (!audio) {
+        audio = new Audio('/assets/parcours/music.mp3');
+        audio.preload = 'auto'; audio.muted = true;
+        audio.play().catch(() => {});
+        const AC = window.AudioContext || window.webkitAudioContext;
+        try { if (AC) ctx = new AC(); } catch (err) { ctx = null; }
+      } else if (ctx && ctx.state === 'suspended') ctx.resume();
+      if (TRIP.on) stopTrip();
+      const r = btn.getBoundingClientRect();
+      prep().then(() => window.OCParcours.open({ x: r.left + r.width / 2, y: r.top + r.height / 2, from: btn, audio, ctx }))
+        .catch(() => { btn.classList.add('is-broken'); });
+    });
+  }
+
   function boot() {
+    const btn = document.querySelector('[data-parcours]');
+    if (btn) parcours(btn);
     document.querySelectorAll('canvas[data-scene]').forEach(setup);
     if (!RM) requestAnimationFrame(loop);
     // redraw once the lettering font for the speech bubble has arrived
