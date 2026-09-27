@@ -275,6 +275,149 @@ class Breaks extends AudioWorkletProcessor {
 }
 registerProcessor('oc-breaks', Breaks);
 
+// granular synthesis over a loaded sound: short windowed grains, scattered around a position
+class Grain extends AudioWorkletProcessor {
+  static get parameterDescriptors() {
+    return [['pos', 0.3], ['spray', 0.1], ['size', 0.12], ['dens', 20], ['pitch', 0], ['rev', 0], ['lvl', 0.8]]
+      .map(([name, d]) => ({ name, defaultValue: d, minValue: -100, maxValue: 1000, automationRate: 'k-rate' }));
+  }
+  constructor() {
+    super();
+    this.buf = null; this.rate = sampleRate; this.gs = []; this.acc = 0; this.blk = 0;
+    this.port.onmessage = (e) => { if (e.data.buf) { this.buf = e.data.buf; this.rate = e.data.rate; this.gs = []; } };
+  }
+  process(ins, outs, p) {
+    const L = outs[0][0], R = outs[0][1] || outs[0][0], n = L.length, B = this.buf;
+    L.fill(0); R.fill(0);
+    if (!B) return true;
+    const len = B.length, pc = ins[0][0], vc = ins[1][0];
+    const pos = Math.min(1, Math.max(0, p.pos[0] + (pc ? pc[0] * 0.5 : 0)));
+    const ratio = (Math.pow(2, p.pitch[0] / 12 + (vc ? vc[0] : 0)) * this.rate) / sampleRate;
+    const dens = Math.max(0.5, p.dens[0]), glen = Math.max(64, Math.floor(p.size[0] * sampleRate));
+    this.acc += (dens * n) / sampleRate;
+    while (this.acc >= 1 && this.gs.length < 96) {
+      this.acc -= 1;
+      const at = (pos + (Math.random() * 2 - 1) * p.spray[0]) * len, pan = (Math.random() * Math.PI) / 2;
+      this.gs.push({ r: ((at % len) + len) % len, d: Math.floor(Math.random() * n), age: 0, len: glen,
+        st: ratio * (Math.random() < p.rev[0] ? -1 : 1), gl: Math.cos(pan), gr: Math.sin(pan) });
+    }
+    if (this.acc > 1) this.acc = 1;
+    const norm = (1.6 * p.lvl[0]) / Math.sqrt(Math.max(1, dens * p.size[0]));
+    for (let gi = this.gs.length - 1; gi >= 0; gi--) {
+      const g = this.gs[gi];
+      for (let i = g.d; i < n && g.age < g.len; i++) {
+        const w = 0.5 - 0.5 * Math.cos((2 * Math.PI * g.age) / g.len);
+        const i0 = Math.floor(g.r), fr = g.r - i0, a = B[i0 % len], b = B[(i0 + 1) % len];
+        const v = (a + (b - a) * fr) * w * norm;
+        L[i] += v * g.gl; R[i] += v * g.gr;
+        g.r += g.st; if (g.r >= len) g.r -= len; else if (g.r < 0) g.r += len;
+        g.age++;
+      }
+      g.d = 0;
+      if (g.age >= g.len) this.gs.splice(gi, 1);
+    }
+    if (++this.blk % 4 === 0) this.port.postMessage({ pos, g: this.gs.slice(0, 40).map((g) => g.r / len) });
+    return true;
+  }
+}
+registerProcessor('oc-grain', Grain);
+
+// spectral resynthesis: every 512 samples an FFT of the sound (a loaded sample or the live input)
+// finds its strongest partials, and a bank of sine oscillators glides to them
+const FN = 2048, FB = 11;
+const REV = new Uint16Array(FN), COS = new Float32Array(FN / 2), SIN = new Float32Array(FN / 2), HANN = new Float32Array(FN);
+for (let i = 0; i < FN; i++) {
+  let r = 0;
+  for (let k = 0; k < FB; k++) r |= ((i >> k) & 1) << (FB - 1 - k);
+  REV[i] = r; HANN[i] = 0.5 - 0.5 * Math.cos((2 * Math.PI * i) / FN);
+}
+for (let i = 0; i < FN / 2; i++) { COS[i] = Math.cos((2 * Math.PI * i) / FN); SIN[i] = -Math.sin((2 * Math.PI * i) / FN); }
+function fft(re, im) {
+  for (let i = 0; i < FN; i++) { const j = REV[i]; if (j > i) { let t = re[i]; re[i] = re[j]; re[j] = t; t = im[i]; im[i] = im[j]; im[j] = t; } }
+  for (let size = 2; size <= FN; size <<= 1) {
+    const half = size >> 1, step = FN / size;
+    for (let i = 0; i < FN; i += size) {
+      for (let j = 0; j < half; j++) {
+        const k = j * step, a = i + j, b = a + half;
+        const tr = re[b] * COS[k] - im[b] * SIN[k], ti = re[b] * SIN[k] + im[b] * COS[k];
+        re[b] = re[a] - tr; im[b] = im[a] - ti; re[a] += tr; im[a] += ti;
+      }
+    }
+  }
+}
+class Resynth extends AudioWorkletProcessor {
+  static get parameterDescriptors() {
+    return [['speed', 0.5], ['pos', 0], ['voices', 16], ['glide', 0.3], ['pitch', 0], ['lvl', 0.8]]
+      .map(([name, d]) => ({ name, defaultValue: d, minValue: -100, maxValue: 1000, automationRate: 'k-rate' }));
+  }
+  constructor() {
+    super();
+    this.buf = null; this.rate = sampleRate; this.head = 0; this.lastPos = -1; this.hop = 0; this.blk = 0;
+    this.ring = new Float32Array(FN); this.rw = 0;
+    this.re = new Float32Array(FN); this.im = new Float32Array(FN); this.mag = new Float32Array(FN / 2);
+    this.f = new Float32Array(32).fill(100); this.a = new Float32Array(32); this.tf = new Float32Array(32).fill(100); this.ta = new Float32Array(32); this.ph = new Float32Array(32);
+    this.port.onmessage = (e) => { if (e.data.buf) { this.buf = e.data.buf; this.rate = e.data.rate; this.head = 0; } };
+  }
+  analyse(live, count) {
+    const re = this.re, im = this.im, B = this.buf, mag = this.mag;
+    let rate = sampleRate;
+    if (live) for (let i = 0; i < FN; i++) re[i] = this.ring[(this.rw + i) % FN] * HANN[i];
+    else if (B) { const len = B.length, h = Math.floor(this.head); for (let i = 0; i < FN; i++) re[i] = B[(h + i) % len] * HANN[i]; rate = this.rate; }
+    else return;
+    im.fill(0); fft(re, im);
+    let top = 0;
+    for (let k = 0; k < FN / 2; k++) { mag[k] = Math.hypot(re[k], im[k]); if (mag[k] > top) top = mag[k]; }
+    if (top < 1e-3) { this.ta.fill(0); return; }
+    const peaks = [];
+    for (let k = 2; k < FN / 2 - 1; k++) {
+      const m = mag[k];
+      if (m > mag[k - 1] && m >= mag[k + 1] && m > top * 0.012) {
+        const al = mag[k - 1], ga = mag[k + 1], d = (0.5 * (al - ga)) / (al - 2 * m + ga || -1e-9);
+        peaks.push([((k + d) * rate) / FN, m]);
+      }
+    }
+    peaks.sort((x, y) => y[1] - x[1]);
+    const sel = peaks.slice(0, count).sort((x, y) => x[0] - y[0]);
+    let sum = 0;
+    for (const q of sel) sum += q[1];
+    // a full-scale sine gives a peak near FN/4: follow the loudness of the source
+    const loud = Math.min(1, (top / (FN / 4)) * 3);
+    for (let v = 0; v < 32; v++) {
+      if (v < sel.length) { this.tf[v] = sel[v][0]; this.ta[v] = (sel[v][1] / sum) * loud; } else this.ta[v] = 0;
+    }
+  }
+  process(ins, outs, p) {
+    const o = outs[0][0], n = o.length, x = ins[0][0], vc = ins[1][0], fz = ins[2][0], live = !!x, B = this.buf;
+    if (live) for (let i = 0; i < n; i++) { this.ring[this.rw] = x[i]; this.rw = (this.rw + 1) % FN; }
+    if (B && !live) {
+      const len = B.length, pos = p.pos[0];
+      if (Math.abs(pos - this.lastPos) > 0.0005) { this.head = pos * len; this.lastPos = pos; }
+      this.head = (this.head + (n * p.speed[0] * this.rate) / sampleRate) % len;
+      if (this.head < 0) this.head += len;
+    }
+    this.hop += n;
+    if (this.hop >= 512) { this.hop = 0; if (!(fz && fz[0] > 0.5)) this.analyse(live, Math.max(1, Math.min(32, Math.round(p.voices[0])))); }
+    const ratio = Math.pow(2, p.pitch[0] / 12 + (vc ? vc[0] : 0)), tc = 0.003 * Math.pow(200, Math.min(1, Math.max(0, p.glide[0])));
+    const kf = 1 - Math.exp(-1 / (tc * sampleRate)), ka = 1 - Math.exp(-1 / (Math.max(0.01, tc * 0.5) * sampleRate)), lvl = p.lvl[0];
+    o.fill(0);
+    for (let v = 0; v < 32; v++) {
+      let f = this.f[v], a = this.a[v], ph = this.ph[v];
+      const tf = this.tf[v], ta = f * ratio < sampleRate * 0.45 ? this.ta[v] : 0;
+      if (a < 1e-4 && ta < 1e-4) { this.a[v] = 0; continue; }
+      if (a < 1e-3) f = tf;
+      for (let i = 0; i < n; i++) {
+        f += (tf - f) * kf; a += (ta - a) * ka;
+        ph += (f * ratio) / sampleRate; if (ph > 1) ph -= 1;
+        o[i] += Math.sin(2 * Math.PI * ph) * a * lvl;
+      }
+      this.f[v] = f; this.a[v] = a; this.ph[v] = ph;
+    }
+    if (++this.blk % 4 === 0) this.port.postMessage({ pos: B && !live ? this.head / B.length : -1, f: Array.from(this.f, (q) => q * ratio), a: Array.from(this.a) });
+    return true;
+  }
+}
+registerProcessor('oc-resynth', Resynth);
+
 // Karplus-Strong plucked string
 class Pluck extends AudioWorkletProcessor {
   static get parameterDescriptors() {
@@ -384,6 +527,46 @@ registerProcessor('oc-crush', Crush);
       }
     }
     return buf;
+  }
+
+  // a built-in sound so the sample modules work before anything is loaded: four sung vowels over
+  // a slow arpeggio, with vibrato and a little breath
+  let DEMO = null;
+  function demoSample() {
+    if (DEMO) return DEMO;
+    const sr = 48000, len = sr * 4, d = new Float32Array(len);
+    const notes = [196, 233.1, 293.7, 349.2], VF = [[730, 1090, 2440], [530, 1840, 2480], [300, 870, 2240], [570, 840, 2410]];
+    const ph = new Float64Array(29);
+    let br = 0;
+    for (let i = 0; i < len; i++) {
+      const t = i / sr, k = Math.min(3, floor(t)), u = t - k;
+      const f0 = notes[k] * (1 + 0.006 * sin(2 * PI * 5.2 * t)), env = min(1, u * 12) * min(1, (1 - u) * 6 + 0.25);
+      let v = 0;
+      for (let hm = 1; hm <= 28; hm++) {
+        const f = f0 * hm;
+        if (f > 9000) break;
+        const [a1, a2, a3] = VF[k], A = exp(-(((f - a1) / 90) ** 2)) + 0.7 * exp(-(((f - a2) / 130) ** 2)) + 0.35 * exp(-(((f - a3) / 180) ** 2)) + 0.03;
+        ph[hm] += f / sr;
+        v += sin(2 * PI * ph[hm]) * A / sqrt(hm);
+      }
+      br += 0.08 * (Math.random() * 2 - 1 - br);
+      d[i] = (v * 0.22 + br * 0.25) * env;
+    }
+    let pk = 0;
+    for (let i = 0; i < len; i++) pk = max(pk, abs(d[i]));
+    for (let i = 0; i < len; i++) d[i] *= 0.9 / pk;
+    DEMO = { data: d, rate: sr, name: 'voix de démonstration' };
+    return DEMO;
+  }
+  async function decodeFile(file) {
+    const ab = await file.arrayBuffer();
+    const buf = await new OfflineAudioContext(1, 1, 48000).decodeAudioData(ab);
+    const len = min(buf.length, buf.sampleRate * 60), d = new Float32Array(len);
+    for (let c = 0; c < buf.numberOfChannels; c++) { const x = buf.getChannelData(c); for (let i = 0; i < len; i++) d[i] += x[i] / buf.numberOfChannels; }
+    let pk = 0;
+    for (let i = 0; i < len; i++) pk = max(pk, abs(d[i]));
+    if (pk > 0) for (let i = 0; i < len; i++) d[i] *= 0.9 / pk;
+    return { data: d, rate: buf.sampleRate, name: file.name };
   }
 
   /* ==========================================================================
@@ -771,6 +954,80 @@ registerProcessor('oc-crush', Crush);
         };
       },
     },
+    grain: {
+      name: 'Granulaire', tag: 'GRAIN', hp: 9, cat: 'src', custom: 'sample',
+      controls: [K('pos', 'Position', 0, 1, 0.3, { fmt: F.pct }), K('spray', 'Dispersion', 0, 0.5, 0.08, { fmt: F.pct }), K('size', 'Taille', 0.01, 0.5, 0.12, { log: true, fmt: F.s }),
+        K('dens', 'Densité', 1, 120, 20, { log: true, fmt: (v) => round(v) + '/s' }), K('pitch', 'Hauteur', -24, 24, 0, { step: 1, fmt: F.st }),
+        K('rev', 'Envers', 0, 1, 0, { fmt: F.pct, size: 's' }), K('lvl', 'Niveau', 0, 1.5, 0.8, { fmt: F.pct, size: 's' })],
+      ins: [J('pos', 'POS.'), J('pitch', '1V/OCT')], outs: [J('out', 'OUT')],
+      build(m) {
+        const n = new AudioWorkletNode(AC, 'oc-grain', { numberOfInputs: 2, numberOfOutputs: 1, outputChannelCount: [2] });
+        n.port.onmessage = (e) => { m.live = e.data; };
+        m.load = (smp) => n.port.postMessage({ buf: smp.data.slice(), rate: smp.rate });
+        m.load(m.sample || demoSample());
+        return { ins: { pos: out(n, 0), pitch: out(n, 1) }, outs: { out: out(n) }, set(id, v) { setP(n, id, v); } };
+      },
+    },
+    resynth: {
+      name: 'Resynthèse', tag: 'SPECTRE', hp: 9, cat: 'src', custom: 'sample',
+      controls: [K('speed', 'Vitesse', 0, 2, 0.5, { fmt: F.x }), K('pos', 'Position', 0, 1, 0, { fmt: F.pct }), K('voices', 'Voix', 1, 32, 16, { step: 1, fmt: F.int }),
+        K('glide', 'Glissé', 0, 1, 0.3, { fmt: F.pct }), K('pitch', 'Hauteur', -24, 24, 0, { step: 1, fmt: F.st }), K('lvl', 'Niveau', 0, 1.5, 0.8, { fmt: F.pct, size: 's' })],
+      ins: [J('in', 'IN'), J('pitch', '1V/OCT'), J('freeze', 'GEL')], outs: [J('out', 'OUT')],
+      note: 'IN branché : analyse le son en direct au lieu du fichier',
+      build(m) {
+        const n = worklet('oc-resynth', 3, 1);
+        n.port.onmessage = (e) => { m.live = e.data; };
+        m.load = (smp) => n.port.postMessage({ buf: smp.data.slice(), rate: smp.rate });
+        m.load(m.sample || demoSample());
+        return { ins: { in: out(n, 0), pitch: out(n, 1), freeze: out(n, 2) }, outs: { out: out(n) }, set(id, v) { setP(n, id, v); } };
+      },
+    },
+    matrix: {
+      name: 'Matrice 4×4', tag: 'MTX', hp: 8, cat: 'shape', custom: 'matrix',
+      controls: [1, 2, 3, 4].flatMap((i) => [1, 2, 3, 4].map((j) => K(`x${i}${j}`, `${i}→${'ABCD'[j - 1]}`, -1, 1, 0, { size: 's' }))),
+      ins: [J('in1', 'IN 1'), J('in2', 'IN 2'), J('in3', 'IN 3'), J('in4', 'IN 4'), J('cv1', 'CV A'), J('cv2', 'CV B'), J('cv3', 'CV C'), J('cv4', 'CV D')],
+      outs: [J('out1', 'A'), J('out2', 'B'), J('out3', 'C'), J('out4', 'D')],
+      note: 'CV x : niveau de la sortie x (ouverte sans câble)',
+      build(m) {
+        const ins = [1, 2, 3, 4].map(() => gain(1)), outs = [1, 2, 3, 4].map(() => gain(1)), cvs = outs.map((o) => { const c = gain(1); c.connect(o.gain); return c; }), X = {};
+        ins.forEach((a, i) => outs.forEach((b, j) => { const x = gain(0); a.connect(x); x.connect(b); X[`x${i + 1}${j + 1}`] = x; }));
+        return {
+          ins: Object.fromEntries([...ins.map((a, i) => [`in${i + 1}`, out(a)]), ...cvs.map((c, i) => [`cv${i + 1}`, out(c)])]),
+          outs: Object.fromEntries(outs.map((o, i) => [`out${i + 1}`, out(o)])),
+          set(id, v) { glide(X[id].gain, v); },
+          // a CV jack opens its output only as far as the voltage says; without a cable the output is fully open
+          patch(used) { outs.forEach((o, i) => glide(o.gain, used.has(`${m.id}.cv${i + 1}`) ? 0 : 1)); },
+        };
+      },
+    },
+    strings: {
+      name: 'Filtre à cordes', tag: 'STR16', hp: 8, cat: 'shape', custom: 'strings',
+      controls: [
+        ...Array.from({ length: 16 }, (_, i) => K('b' + i, 'Bande ' + (i + 1), 0, 1, round((0.9 / sqrt(i + 1)) * 100) / 100, { fmt: F.pct })),
+        K('freq', 'Fondamentale', 30, 1000, 110, { log: true, fmt: F.hz }), K('res', 'Résonance', 5, 400, 120, { log: true, fmt: F.int }),
+        K('inh', 'Inharmonie', 0, 1, 0, { fmt: F.pct, size: 's' }), K('bright', 'Éclat', 0, 1, 0.6, { fmt: F.pct, size: 's' }), K('mix', 'Direct', 0, 1, 0, { fmt: F.pct, size: 's' }),
+      ],
+      ins: [J('in', 'IN'), J('pitch', '1V/OCT')], outs: [J('out', 'OUT')],
+      build(m) {
+        // the bands ring hard at high resonance: a soft clipper keeps the sum in range
+        const input = gain(1), pitch = gain(1200), sum = gain(1), dry = gain(0), bands = [], soft = shaper((x) => tanh(x * 4) / tanh(4)), post = gain(0.45);
+        input.connect(dry); dry.connect(sum); sum.connect(soft); soft.connect(post);
+        for (let i = 0; i < 16; i++) {
+          const f = filter('bandpass', 110 * (i + 1), 120), g = gain(0);
+          input.connect(f); f.connect(g); g.connect(sum); pitch.connect(f.detune);
+          bands.push({ f, g });
+        }
+        const tune = () => {
+          const v = m.values, B = v.inh * v.inh * 0.004;
+          bands.forEach(({ f, g }, i) => {
+            const n = i + 1, hz = v.freq * n * sqrt(1 + B * n * n), tilt = pow(n, -(1 - v.bright) * 1.2);
+            glide(f.frequency, min(hz, 20000)); glide(f.Q, v.res);
+            glide(g.gain, hz < 18000 ? v['b' + i] * tilt * 5 * sqrt(v.res) : 0);
+          });
+        };
+        return { ins: { in: out(input), pitch: out(pitch) }, outs: { out: out(post) }, set(id, v) { if (id === 'mix') glide(dry.gain, v); else tune(); } };
+      },
+    },
     scope: {
       name: 'Oscilloscope', tag: 'SCP', hp: 8, cat: 'util', custom: 'scope',
       controls: [K('time', 'Fenêtre', 64, 2048, 512, { log: true, step: 1, fmt: F.win, fixed: true }), K('zoom', 'Zoom', 0.25, 4, 1, { log: true, fmt: F.x, fixed: true })],
@@ -804,7 +1061,8 @@ registerProcessor('oc-crush', Crush);
   const RACK = [
     ['clock', 'clock'], ['seq', 'seq'], ['keys', 'keys'], ['breaks', 'breaks'], ['euclid', 'euclid'], ['lfo1', 'lfo'], ['lfo2', 'lfo'], ['chaos', 'chaos'], ['sh', 'sh'], null,
     ['quant', 'quant'], ['vco1', 'vco'], ['vco2', 'vco'], ['vco3', 'vco'], ['noise', 'noise'], ['mix', 'mix'], ['vcf1', 'vcf'], ['vcf2', 'vcf'], ['voice', 'voice'], ['adsr1', 'adsr'], ['adsr2', 'adsr'], ['vca1', 'vca'], ['vca2', 'vca'], null,
-    ['att', 'att'], ['pluck', 'pluck'], ['drum', 'drum'], ['ring', 'ring'], ['drive', 'drive'], ['fold', 'fold'], ['crush', 'crush'], ['chorus', 'chorus'], ['delay', 'delay'], ['reverb', 'reverb'], ['scope', 'scope'], ['out', 'out'],
+    ['att', 'att'], ['pluck', 'pluck'], ['drum', 'drum'], ['ring', 'ring'], ['drive', 'drive'], ['fold', 'fold'], ['crush', 'crush'], ['matrix', 'matrix'], null,
+    ['grain', 'grain'], ['resynth', 'resynth'], ['strings', 'strings'], ['chorus', 'chorus'], ['delay', 'delay'], ['reverb', 'reverb'], ['scope', 'scope'], ['out', 'out'],
   ];
 
   /* ==========================================================================
@@ -909,6 +1167,48 @@ registerProcessor('oc-crush', Crush);
         ['clock.x4', 'seq.clk'], ['clock.d2', 'seq.rst'], ['seq.pitch', 'vco1.pitch'], ['vco1.tri', 'mix.in1'], ['vco1.sub', 'mix.in2'], ['mix.out', 'vcf1.in'],
         ['seq.gate', 'adsr1.gate'], ['adsr1.env', 'vcf1.cv1'], ['adsr1.env', 'vca1.cv'], ['vcf1.out', 'vca1.in'], ['vca1.out', 'out.mix'],
         ['breaks.mix', 'scope.a'], ['vca1.out', 'scope.b']],
+    },
+    nuage: {
+      name: 'Nuage granulaire',
+      values: {
+        grain: { pos: 0.35, spray: 0.15, size: 0.16, dens: 28, rev: 0.2, lvl: 0.9 }, lfo1: { rate: 0.05 }, chaos: { rate: 0.25 },
+        delay: { time: 0.42, fb: 0.45, tone: 4000, mix: 0.3 }, reverb: { size: 7, damp: 0.35, mix: 0.5 }, out: { vol: 0.6 }, scope: { time: 1600 },
+      },
+      cables: [['lfo1.tri', 'grain.pos'], ['chaos.x', 'quant.in'], ['quant.out', 'grain.pitch'], ['grain.out', 'delay.in'], ['delay.out', 'reverb.in'],
+        ['reverb.out', 'out.mix'], ['grain.out', 'scope.a'], ['lfo1.tri', 'scope.b']],
+    },
+    spectres: {
+      name: 'Spectres',
+      values: {
+        resynth: { speed: 0.5, voices: 20, glide: 0.35, lvl: 0.9 }, clock: { bpm: 80 }, seq: seqVals([0, 0, 7, 7, 5, 5, 3, 3]), lfo2: { rate: 0.2 },
+        chorus: { rate: 0.3, depth: 0.6, mix: 0.5 }, reverb: { size: 6, damp: 0.4, mix: 0.45 }, out: { vol: 0.6 }, scope: { time: 1400 },
+      },
+      cables: [['clock.x1', 'seq.clk'], ['seq.pitch', 'resynth.pitch'], ['lfo2.sqr', 'resynth.freeze'], ['resynth.out', 'chorus.in'],
+        ['chorus.l', 'out.l'], ['chorus.r', 'out.r'], ['chorus.l', 'reverb.in'], ['reverb.out', 'out.mix'], ['resynth.out', 'scope.a']],
+    },
+    matrice: {
+      name: 'Matrice tournante',
+      values: {
+        clock: { bpm: 96 }, seq: seqVals([0, 3, 7, 10, 12, 10, 7, 3]), vco1: { oct: -1 }, vco2: { tune: 7 }, vco3: { oct: -2 }, euclid: { n: 16, k: 5 },
+        matrix: { x11: 0.8, x13: 0.4, x22: 0.7, x24: 0.5, x33: 0.6, x34: 0.3, x41: 0.5, x42: -0.4 }, lfo1: { rate: 0.15 }, lfo2: { rate: 0.08 }, vcf1: { freq: 900, res: 0.5, cv1: 2 }, voice: { vowel: 1, cv: 2 },
+        delay: { time: 0.31, fb: 0.5, mix: 0.6 }, reverb: { size: 5, mix: 0.6 }, out: { vol: 0.5 }, scope: { time: 900 },
+      },
+      cables: [['clock.x2', 'seq.clk'], ['seq.pitch', 'vco1.pitch'], ['seq.pitch', 'vco2.pitch'], ['vco1.saw', 'matrix.in1'], ['vco2.tri', 'matrix.in2'],
+        ['noise.dark', 'matrix.in3'], ['vco3.sqr', 'matrix.in4'], ['matrix.out1', 'vcf1.in'], ['lfo2.sin', 'vcf1.cv1'], ['vcf1.out', 'out.l'],
+        ['matrix.out2', 'voice.in'], ['lfo2.tri', 'voice.cv'], ['voice.out', 'out.r'], ['matrix.out3', 'delay.in'], ['delay.out', 'out.mix'],
+        ['matrix.out4', 'reverb.in'], ['reverb.out', 'out.mix'], ['lfo1.sin', 'matrix.cv1'], ['lfo1.tri', 'matrix.cv2'], ['clock.x1', 'matrix.cv3'],
+        ['clock.x4', 'euclid.clk'], ['euclid.hit', 'matrix.cv4'], ['matrix.out1', 'scope.a'], ['matrix.out3', 'scope.b']],
+    },
+    cordes: {
+      name: 'Cordes sympathiques',
+      values: {
+        clock: { bpm: 110 }, euclid: { n: 16, k: 7 }, adsr1: { a: 0.001, d: 0.08, s: 0, r: 0.05 }, seq: seqVals([0, 5, 7, 3, 0, 10, 7, 5]),
+        strings: { freq: 110, res: 160, inh: 0.1, bright: 0.6 }, chorus: { rate: 0.25, depth: 0.5, mix: 0.4 }, reverb: { size: 4, mix: 0.4 },
+        out: { vol: 0.6 }, scope: { time: 1000 },
+      },
+      cables: [['clock.x4', 'euclid.clk'], ['euclid.hit', 'adsr1.gate'], ['noise.white', 'vca1.in'], ['adsr1.env', 'vca1.cv'], ['vca1.out', 'strings.in'],
+        ['clock.x1', 'seq.clk'], ['seq.pitch', 'strings.pitch'], ['strings.out', 'chorus.in'], ['chorus.l', 'out.l'], ['chorus.r', 'out.r'],
+        ['chorus.l', 'reverb.in'], ['reverb.out', 'out.mix'], ['strings.out', 'scope.a'], ['vca1.out', 'scope.b']],
     },
     cloches: {
       name: 'Cloches et bruit',
@@ -1039,6 +1339,9 @@ registerProcessor('oc-crush', Crush);
     if (d.custom === 'seq') renderSeq(m, body, ctrl);
     else if (d.custom === 'keys') renderKeys(m, body, ctrl);
     else if (d.custom === 'breaks') renderBreaks(m, body, ctrl);
+    else if (d.custom === 'sample') renderSample(m, body, ctrl);
+    else if (d.custom === 'matrix') renderMatrix(m, body, ctrl);
+    else if (d.custom === 'strings') renderStrings(m, body, ctrl);
     else {
       if (d.custom === 'scope') { m.canvas = h('canvas', { class: 'scope', role: 'img', 'aria-label': 'Écran de l’oscilloscope' }); body.append(m.canvas); }
       if (d.custom === 'chaos') renderChaos(m, body);
@@ -1112,6 +1415,108 @@ registerProcessor('oc-crush', Crush);
     m.def.controls.filter((c) => !c.sw).forEach((c) => box.append(ctrl(c)));
     body.append(box);
     m.step = ([st, src]) => cells.forEach((b) => { const c = +b.dataset.col; b.classList.toggle('is-now', c === st); b.classList.toggle('is-chop', c === src && src !== st); });
+  }
+
+  // sample modules: a waveform to drop a file on, a load button, and a live view of what the
+  // processor does (grains scattered over the sound, or the partials the resynthesis follows)
+  function renderSample(m, body, ctrl) {
+    const cv = h('canvas', { class: 'wave', role: 'img', 'aria-label': 'Forme d’onde du son chargé' });
+    const file = h('input', { type: 'file', accept: 'audio/*,.wav', hidden: '' });
+    const btn = h('button', { class: 'sw__val load', type: 'button' }, 'Charger un son');
+    const name = h('span', { class: 'load__name' });
+    const bar = h('div', { class: 'load__bar' });
+    bar.append(btn, name, file);
+    body.append(cv, bar);
+    const box = h('div', { class: 'ctrls' });
+    m.def.controls.forEach((c) => box.append(ctrl(c)));
+    body.append(box);
+    let peaks = null;
+    const use = (smp) => {
+      m.sample = smp;
+      name.textContent = smp.name;
+      peaks = new Float32Array(240);
+      const d = smp.data, step = d.length / 240;
+      for (let i = 0; i < 240; i++) { let pk = 0; for (let k = floor(i * step), e = floor((i + 1) * step); k < e; k++) pk = max(pk, abs(d[k])); peaks[i] = pk; }
+      if (m.load && AC) m.load(smp);
+      m.drawLive();
+    };
+    const take = (f) => { if (!f) return; say(`Chargement de ${f.name}…`); decodeFile(f).then((smp) => { use(smp); say(`${f.name} chargé dans ${m.title}.`); }).catch(() => say('Ce fichier audio n’a pas pu être lu.')); };
+    btn.addEventListener('click', () => file.click());
+    file.addEventListener('change', () => take(file.files[0]));
+    queueMicrotask(() => {
+      const el = body.closest('.mod');
+      el.addEventListener('dragover', (e) => { e.preventDefault(); el.classList.add('is-drop'); });
+      el.addEventListener('dragleave', () => el.classList.remove('is-drop'));
+      el.addEventListener('drop', (e) => { e.preventDefault(); el.classList.remove('is-drop'); take(e.dataTransfer.files[0]); });
+    });
+    m.drawLive = () => {
+      const g = cv.getContext('2d'), dpr = min(1.5, window.devicePixelRatio || 1), W = cv.clientWidth, H = cv.clientHeight;
+      if (!W || !H) return;
+      if (cv.width !== round(W * dpr)) { cv.width = round(W * dpr); cv.height = round(H * dpr); }
+      g.setTransform(dpr, 0, 0, dpr, 0, 0);
+      g.fillStyle = '#f7f4ec'; g.fillRect(0, 0, W, H);
+      const wh = m.type === 'resynth' ? H * 0.34 : H;
+      if (peaks) {
+        g.fillStyle = 'rgba(22,22,22,.55)';
+        for (let i = 0; i < 240; i++) { const x = (i / 240) * W, a = peaks[i] * wh * 0.46; g.fillRect(x, wh / 2 - a, W / 240 + 0.5, 2 * a); }
+      }
+      const L = m.live;
+      if (!L) return;
+      if (m.type === 'grain') {
+        g.strokeStyle = '#c1473b'; g.lineWidth = 2;
+        g.beginPath(); g.moveTo(L.pos * W, 0); g.lineTo(L.pos * W, H); g.stroke();
+        g.fillStyle = '#f2c230'; g.strokeStyle = '#161616'; g.lineWidth = 1.2;
+        L.g.forEach((q, i) => { g.beginPath(); g.arc(q * W, H * (0.15 + ((i * 37) % 70) / 100), 3.2, 0, 2 * PI); g.fill(); g.stroke(); });
+      } else {
+        if (L.pos >= 0) { g.strokeStyle = '#c1473b'; g.lineWidth = 2; g.beginPath(); g.moveTo(L.pos * W, 0); g.lineTo(L.pos * W, wh); g.stroke(); }
+        g.strokeStyle = 'rgba(22,22,22,.35)'; g.lineWidth = 1; g.beginPath(); g.moveTo(0, wh + 0.5); g.lineTo(W, wh + 0.5); g.stroke();
+        const x = (f) => (Math.log(f / 40) / Math.log(12000 / 40)) * W;
+        let top = 0;
+        L.a.forEach((a) => { top = max(top, a); });
+        L.f.forEach((f, i) => {
+          const a = L.a[i];
+          if (a < 1e-4 || f < 40) return;
+          const h2 = (a / (top || 1)) * (H - wh - 6), xx = x(f);
+          g.strokeStyle = '#3456a0'; g.lineWidth = 2.4; g.beginPath(); g.moveTo(xx, H - 2); g.lineTo(xx, H - 2 - h2); g.stroke();
+          g.fillStyle = '#c1473b'; g.beginPath(); g.arc(xx, H - 2 - h2, 2.6, 0, 2 * PI); g.fill();
+        });
+      }
+    };
+    use(demoSample());
+  }
+
+  // 4×4 matrix: rows are inputs, columns outputs, each crossing a bipolar knob
+  function renderMatrix(m, body, ctrl) {
+    const g = h('div', { class: 'mtx' });
+    g.append(h('span'));
+    'ABCD'.split('').forEach((c) => g.append(h('span', { class: 'mtx__head' }, c)));
+    for (let i = 1; i <= 4; i++) {
+      g.append(h('span', { class: 'mtx__head' }, String(i)));
+      for (let j = 1; j <= 4; j++) g.append(ctrl(m.def.controls.find((c) => c.id === `x${i}${j}`)));
+    }
+    body.append(g);
+  }
+
+  // sixteen bands drawn as bars: drag across them to shape the spectrum of the strings
+  function renderStrings(m, body, ctrl) {
+    const bars = h('div', { class: 'bands', role: 'group', 'aria-label': 'Niveau des 16 bandes' }), fills = [];
+    for (let i = 0; i < 16; i++) {
+      const b = h('span', { class: 'bands__bar' }), f = h('i');
+      b.append(f); bars.append(b); fills.push(f);
+      m.ui['b' + i] = (v) => { f.style.height = round(v * 100) + '%'; };
+    }
+    let down = false;
+    const paint = (e) => {
+      const r = bars.getBoundingClientRect(), i = clamp(floor(((e.clientX - r.left) / r.width) * 16), 0, 15);
+      setValue(m, 'b' + i, round(clamp(1 - (e.clientY - r.top) / r.height, 0, 1) * 100) / 100);
+    };
+    bars.addEventListener('pointerdown', (e) => { e.preventDefault(); down = true; bars.setPointerCapture(e.pointerId); paint(e); });
+    bars.addEventListener('pointermove', (e) => { if (down) paint(e); });
+    bars.addEventListener('pointerup', () => { down = false; });
+    body.append(bars);
+    const box = h('div', { class: 'ctrls' });
+    m.def.controls.filter((c) => !/^b\d+$/.test(c.id)).forEach((c) => box.append(ctrl(c)));
+    body.append(box);
   }
 
   // the euclidean ring: every step a dot, the pulses inked in, the playhead in red
@@ -1325,6 +1730,7 @@ registerProcessor('oc-crush', Crush);
   function patched() {
     const used = new Set(state.cables.flatMap((c) => [c.from, c.to]));
     for (const [k, el] of Object.entries(jackEls)) el.classList.toggle('is-patched', used.has(k));
+    for (const m of mods) if (m.audio && m.audio.patch) m.audio.patch(used);
   }
 
   let drag = null, dragEl = null;
@@ -1402,6 +1808,7 @@ registerProcessor('oc-crush', Crush);
         (m.audio.extra || []).forEach((n) => n.connect(SINK));
       }
       state.cables.forEach((c) => wire(c, true));
+      patched();
       if (AC.state !== 'running') await AC.resume();
       setPowerUi(true);
       say('');
@@ -1515,7 +1922,7 @@ registerProcessor('oc-crush', Crush);
       if (now - lastUi > 32) {
         lastUi = now;
         listen();
-        if (rackSeen) { drawScope(); pulses(); if (byId.chaos.drawTrail) byId.chaos.drawTrail(); }
+        if (rackSeen) { drawScope(); pulses(); if (byId.chaos.drawTrail) byId.chaos.drawTrail(); byId.grain.drawLive(); byId.resynth.drawLive(); }
       }
     } else live.level *= 0.9;
     requestAnimationFrame(frame);

@@ -74,9 +74,9 @@
 /* ---------- Modules ---------- */
 .mod {
   position: relative;
-  width: calc(var(--w) * var(--hp)); max-width: 100%; height: 470px;
+  width: calc(var(--w) * var(--hp)); max-width: 100%; min-height: 300px;
   display: flex; flex-direction: column;
-  padding: 18px 7px 16px;
+  padding: 14px 6px 13px;
   background: var(--paper-2);
   border: 2px solid var(--ink);
   user-select: none; -webkit-user-select: none;
@@ -87,7 +87,7 @@
 }
 .mod::before { top: 4px; left: 6px; }
 .mod::after { bottom: 4px; right: 6px; }
-.mod__head { background: var(--cat); border: 1.5px solid var(--ink); padding: 4px 5px 5px; text-align: center; margin-bottom: 10px; }
+.mod__head { background: var(--cat); border: 1.5px solid var(--ink); padding: 3px 5px 4px; text-align: center; margin-bottom: 8px; }
 .mod__tag { display: block; font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.14em; }
 .mod__name {
   margin: 0; font-family: var(--display); font-variation-settings: "SOFT" 100, "WONK" 1;
@@ -97,7 +97,7 @@
 .mod--slim .mod__name { font-size: 0.84rem; }
 .mod--narrow .mod__name { font-size: 0.76rem; }
 .mod--narrow .mod__tag { font-size: 0.54rem; letter-spacing: 0.08em; }
-.mod__body { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 9px; min-height: 0; }
+.mod__body { display: flex; flex-direction: column; align-items: center; gap: 7px; min-height: 0; }
 .mod__note { margin: 0; font-family: var(--mono); font-size: 0.56rem; line-height: 1.35; color: var(--ink-soft); text-align: center; }
 .ctrls { display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-start; gap: 8px 4px; }
 
@@ -147,7 +147,7 @@
 .vu i:nth-child(n+10).on { background: var(--red); }
 
 /* jacks */
-.mod__jacks { display: grid; gap: 6px; margin-top: 8px; }
+.mod__jacks { display: grid; gap: 5px; margin-top: auto; padding-top: 8px; }
 .jacks { display: grid; grid-template-columns: repeat(auto-fill, minmax(38px, 1fr)); gap: 5px 1px; justify-items: center; }
 .jacks--out { padding: 6px 2px 5px; background: var(--ink); border-radius: 3px; }
 .jack { display: grid; justify-items: center; gap: 2px; padding: 0; background: none; border: 0; color: var(--ink); cursor: crosshair; touch-action: none; font: inherit; }
@@ -185,6 +185,19 @@
 .kbd__oct { font-family: var(--mono); font-size: 0.66rem; min-width: 46px; text-align: center; }
 .kbd__midi { margin-left: auto; }
 .kbd__midi.is-on { background: var(--sage); color: var(--ink); }
+
+/* sample modules, matrix, string bands */
+.wave { display: block; width: 100%; height: 118px; background: var(--paper); border: 2px solid var(--ink); }
+.mod.is-drop { outline: 3px dashed var(--red); outline-offset: -6px; }
+.load__bar { display: flex; align-items: center; gap: 6px; width: 100%; }
+.load { cursor: pointer; white-space: nowrap; }
+.load__name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--mono); font-size: 0.55rem; color: var(--ink-soft); }
+.mtx { display: grid; grid-template-columns: 12px repeat(4, 1fr); gap: 2px 0; align-items: center; justify-items: center; width: 100%; }
+.mtx__head { font-family: var(--mono); font-size: 0.58rem; font-weight: 500; }
+.mtx .knob__label { display: none; }
+.bands { display: grid; grid-template-columns: repeat(16, 1fr); gap: 2px; width: 100%; height: 96px; padding: 3px; background: var(--paper); border: 2px solid var(--ink); cursor: ns-resize; touch-action: none; }
+.bands__bar { position: relative; background: rgba(22, 22, 22, 0.06); }
+.bands__bar i { position: absolute; left: 0; right: 0; bottom: 0; background: var(--blue-deep); border-top: 2px solid var(--ink); }
 
 /* break grid */
 .brk { display: grid; grid-template-columns: 18px repeat(16, 1fr); gap: 3px 2px; width: 100%; align-items: center; }
