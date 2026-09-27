@@ -271,6 +271,17 @@ a.plate__link:hover { color: var(--ink); transform: translateY(-4px) rotate(-0.6
 .lost h1 { font-family: var(--display); font-variation-settings: "SOFT" 100, "WONK" 1; font-size: clamp(4rem, 16vw, 8rem); line-height: 1; margin: 0; text-shadow: 4px 3px 0 rgba(200, 71, 47, 0.4); }
 .lost p { font-style: italic; }
 
+/* the trip */
+.trip { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 60; pointer-events: none; }
+.is-trip main, .is-trip .nav, .is-trip .footer { animation: trip-hue 5s linear infinite; }
+.is-trip .ink { animation: trip-wobble 2.4s ease-in-out infinite; }
+@keyframes trip-hue { from { filter: hue-rotate(0deg) saturate(1.7); } to { filter: hue-rotate(360deg) saturate(1.7); } }
+@keyframes trip-wobble {
+  0%, 100% { transform: none; }
+  25% { transform: skewX(4deg) scale(1.02) rotate(-1deg); }
+  75% { transform: skewY(-3deg) scale(0.98) rotate(1deg); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   *, *::before, *::after { transition: none !important; animation: none !important; }

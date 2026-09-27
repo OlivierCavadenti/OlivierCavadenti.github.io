@@ -7,12 +7,13 @@
 
   const RM = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const TAU = Math.PI * 2;
-  const { sin, cos, min, max, floor, hypot, sqrt, abs } = Math;
+  const { sin, cos, min, max, floor, round, hypot, sqrt, abs, PI } = Math;
   const clamp = (v, a, b) => max(a, min(b, v));
 
   const INK = '#161616', WHITE = '#f7f4ec', RED = '#c1473b', YEL = '#f2c230', BLUE = '#8fb4de',
     BLUED = '#3456a0', SHADE = '#6f9bd1', LILAC = '#b9b4c4', GREEN = '#a5c63b', ORANGE = '#e58a2f', MAROON = '#6e2a22',
     PINK = '#e7a3a0';
+  const PSY = ['#ff3d7f', '#ffcc00', '#00c2ff', '#7cff4f', '#b44dff', '#ff7a00', '#ff5ec4'];
   const MANA = ['#f7f0cf', '#6ea3d8', '#6d5a78', '#e0643f', '#79b35a'];
 
   /* ---------- ink toolkit ---------- */
@@ -280,6 +281,10 @@
 
   // the blue giant's head: (gx, gy) centre, hr half-height, rot tilt; talk opens the mouth
   function giantHead(ink, gx, gy, hr, t, look, rot = -0.16, talk = false, closed = false) {
+    ink.head = { x: gx, y: gy, rx: hr * 0.8, ry: hr, rot };
+    const trip = tripAmt(), hue = (performance.now() / 12) % 360;
+    const SKIN = trip ? `hsl(${hue}, 85%, 68%)` : BLUE, SHD = trip ? `hsl(${(hue + 70) % 360}, 80%, 50%)` : SHADE;
+    if (trip) { talk = 0.55 + 0.45 * sin(t * 3); closed = false; }
     const g = ink.g, P = (dx, dy) => [gx + (dx * cos(rot) - dy * sin(rot)) * hr, gy + (dx * sin(rot) + dy * cos(rot)) * hr];
     // antennae with ringed bobbles, behind the skull
     for (const sx of [-1, 1]) {
@@ -297,9 +302,9 @@
     // skin in two flat tones, as on a screen print: the lit side, and a crescent of shade on the
     // lower right edged with a few fine hatches
     const [lx0, ly0] = P(-0.13, -0.1);
-    ink.ell(gx, gy, hr * 0.8, hr, { fill: SHADE, w: 0, rot });
+    ink.ell(gx, gy, hr * 0.8, hr, { fill: SHD, w: 0, rot });
     g.save(); ink.clipEll(gx, gy, hr * 0.8, hr, rot)(); g.clip();
-    ink.ell(lx0, ly0, hr * 0.76, hr * 0.97, { fill: BLUE, w: 0, rot });
+    ink.ell(lx0, ly0, hr * 0.76, hr * 0.97, { fill: SKIN, w: 0, rot });
     g.beginPath(); g.ellipse(gx, gy, hr * 0.8, hr, rot, 0, TAU); g.ellipse(lx0, ly0, hr * 0.76, hr * 0.97, rot, 0, TAU);
     g.clip('evenodd');
     ink.hatch(() => { g.beginPath(); g.rect(gx - hr, gy - hr * 1.1, hr * 2, hr * 2.2); }, gx - hr, gy - hr * 1.1, hr * 2, hr * 2.2, { angle: 0.95, gap: 6.5, c: BLUED, lw: 1.1, alpha: 0.45 });
@@ -311,14 +316,15 @@
     // cheeks
     for (const sx of [-1, 1]) ink.ell(...P(sx * 0.46, 0.24), hr * 0.14, hr * 0.08, { fill: PINK, w: 0, alpha: 0.75, rot });
     // eyes under heavy lids, brows
-    const blink = closed || (t % 5.3) < 0.2, [lx, ly] = look;
+    const blink = closed || (!trip && (t % 5.3) < 0.2), [lx, ly] = look;
     for (const sx of [-1, 1]) {
       const [ex, ey] = P(sx * 0.33, -0.06), r = hr * 0.2;
       eye(ink, ex, ey, r, lx - ex, ly - ey, blink);
+      if (trip) ink.rings(ex, ey, r * 0.78, PSY, { rot: t * 7 * sx });
       if (!blink) {
         const lid = ellPts(ex, ey, r * 1.04, r * 0.88, 0, 0, 0, Math.PI + 0.42, TAU - 0.42, false);
         lid.push([ex, ey - r * 0.28]);
-        ink.draw(lid, { fill: BLUE, closed: true, w: 2 });
+        if (!trip) ink.draw(lid, { fill: BLUE, closed: true, w: 2 });
       }
       ink.draw([P(sx * 0.16, -0.32 - (blink ? 0 : 0.02)), P(sx * 0.32, -0.38), P(sx * 0.5, -0.33)], { w: 4 });
     }
@@ -872,17 +878,131 @@
     scenes.push(sc);
     if (io) io.observe(cv);
     if ('ResizeObserver' in window) new ResizeObserver(() => { size(); render(sc, now()); }).observe(cv);
+    // a click on the alien's face starts the trip
+    const onFace = (e) => {
+      const hd = api.ink.head;
+      if (!hd) return false;
+      const r = cv.getBoundingClientRect(), x = (e.clientX - r.left) / api.s - hd.x, y = (e.clientY - r.top) / api.s - hd.y;
+      const u = x * cos(-hd.rot) - y * sin(-hd.rot), v = x * sin(-hd.rot) + y * cos(-hd.rot);
+      return (u / hd.rx) ** 2 + (v / hd.ry) ** 2 <= 1;
+    };
+    cv.addEventListener('pointermove', (e) => { cv.style.cursor = !RM && onFace(e) ? 'pointer' : ''; });
+    cv.addEventListener('click', (e) => { if (onFace(e)) { e.preventDefault(); startTrip(e.clientX, e.clientY); } });
     render(sc, now());
   }
 
   function loop(ts) {
     const t = (ts - t0) / 1000;
     for (const sc of scenes) {
-      if (!sc.visible || ts - sc.last < sc.pace) continue;
+      if (!sc.visible || ts - sc.last < (TRIP.on ? 45 : sc.pace)) continue;
       sc.last = ts;
       render(sc, t);
     }
     requestAnimationFrame(loop);
+  }
+
+  /* ==========================================================================
+     The trip: a click on the alien's face floods the page with a flat-colour, sixties
+     cartoon dream. Colours glide rather than flash, and nothing starts under reduced motion.
+     ========================================================================== */
+  const TRIP = { on: false, t0: 0, x: 0, y: 0, cv: null };
+  const TRIP_LEN = 14;
+  function tripAmt() {
+    if (!TRIP.on) return 0;
+    const t = (performance.now() - TRIP.t0) / 1000;
+    return clamp(min(t / 0.8, (TRIP_LEN - t) / 1.5), 0, 1);
+  }
+  function stopTrip() {
+    TRIP.on = false;
+    if (TRIP.cv) TRIP.cv.remove();
+    TRIP.cv = null;
+    document.documentElement.classList.remove('is-trip');
+  }
+  window.addEventListener('keydown', (e) => { if (e.key === 'Escape' && TRIP.on) stopTrip(); });
+
+  function daisy(g, x, y, r, rot, col, t) {
+    g.save(); g.translate(x, y); g.rotate(rot);
+    g.lineWidth = 3; g.strokeStyle = INK;
+    for (let k = 0; k < 9; k++) {
+      const a = (k / 9) * TAU;
+      g.fillStyle = col;
+      g.beginPath(); g.ellipse(cos(a) * r * 0.62, sin(a) * r * 0.62, r * 0.42, r * 0.22, a, 0, TAU); g.fill(); g.stroke();
+    }
+    g.fillStyle = '#ffcc00'; g.beginPath(); g.arc(0, 0, r * 0.36, 0, TAU); g.fill(); g.stroke();
+    g.fillStyle = INK;
+    g.beginPath(); g.arc(-r * 0.12, -r * 0.08, r * 0.05, 0, TAU); g.arc(r * 0.12, -r * 0.08, r * 0.05, 0, TAU); g.fill();
+    g.lineWidth = 2.5; g.beginPath(); g.arc(0, r * 0.02, r * 0.17, 0.3, PI - 0.3); g.stroke();
+    g.restore();
+  }
+
+  function startTrip(x, y) {
+    if (RM) return;
+    if (TRIP.on) { stopTrip(); return; }
+    TRIP.on = true; TRIP.t0 = performance.now(); TRIP.x = x; TRIP.y = y;
+    const cv = document.createElement('canvas');
+    cv.className = 'trip'; cv.setAttribute('aria-hidden', 'true');
+    document.body.append(cv); TRIP.cv = cv;
+    document.documentElement.classList.add('is-trip');
+    const flowers = Array.from({ length: 18 }, (_, i) => ({ x: Math.random(), y: 0.2 + Math.random(), r: 20 + Math.random() * 46, vx: (Math.random() - 0.5) * 0.05, vy: -0.03 - Math.random() * 0.06, s: (Math.random() - 0.5) * 2, c: PSY[i % PSY.length] }));
+    const words = ['LOVE', 'WOW', 'PAIX', 'OUI !', 'ZOOOM', 'MIAOU'];
+    const draw = (now) => {
+      if (!TRIP.on || TRIP.cv !== cv) return;
+      const t = max(0, (now - TRIP.t0) / 1000), a = tripAmt();
+      if (t > TRIP_LEN) { stopTrip(); return; }
+      const W = innerWidth, H = innerHeight, g = cv.getContext('2d');
+      if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
+      g.clearRect(0, 0, W, H);
+      g.lineJoin = 'round'; g.lineCap = 'round';
+      const cx = TRIP.x, cy = TRIP.y, R = hypot(W, H);
+      // a slow sunburst from the click
+      g.globalAlpha = a * 0.42;
+      for (let k = 0; k < 28; k++) {
+        const a0 = t * 0.5 + (k / 28) * TAU;
+        g.fillStyle = PSY[k % PSY.length];
+        g.beginPath(); g.moveTo(cx, cy); g.arc(cx, cy, R, a0, a0 + TAU / 56); g.fill();
+      }
+      // rings rolling outwards, inked like the prints
+      g.globalAlpha = a * 0.8;
+      for (let k = 0; k < 14; k++) {
+        const r = (t * 170 + k * 85) % R, w = 16 + 9 * sin(t * 2.4 + k);
+        g.lineWidth = w + 6; g.strokeStyle = INK; g.beginPath(); g.arc(cx, cy, r, 0, TAU); g.stroke();
+        g.lineWidth = w; g.strokeStyle = PSY[k % PSY.length]; g.beginPath(); g.arc(cx, cy, r, 0, TAU); g.stroke();
+      }
+      // rainbow ribbons waving across the page
+      g.globalAlpha = a;
+      for (let k = 0; k < 6; k++) {
+        g.beginPath();
+        for (let xx = -20; xx <= W + 20; xx += 16) {
+          const yy = H * 0.78 + k * 22 + sin(xx * 0.012 + t * 2.2 + k * 0.4) * 46 + sin(xx * 0.004 - t) * 30;
+          if (xx < 0) g.moveTo(xx, yy); else g.lineTo(xx, yy);
+        }
+        g.lineWidth = 24; g.strokeStyle = INK; g.stroke();
+        g.lineWidth = 18; g.strokeStyle = PSY[k]; g.stroke();
+      }
+      // smiling daisies drifting up
+      for (const f of flowers) {
+        const fx = ((((f.x + f.vx * t + 0.05 * sin(t + f.r)) % 1) + 1) % 1) * W, fy = ((((f.y + f.vy * t) % 1.3) + 1.3) % 1.3) * H - 0.15 * H;
+        daisy(g, fx, fy, f.r * (1 + 0.15 * sin(t * 3 + f.r)), t * f.s, f.c, t);
+      }
+      // one big word at a time, letters bouncing
+      const wi = floor(t / 2.3) % words.length, wt = (t % 2.3) / 2.3, word = words[wi];
+      const size = min(W, H) * 0.2 * (0.6 + 0.6 * sin(min(1, wt * 3) * PI * 0.5));
+      g.font = `${round(size)}px "Patrick Hand SC", "Fraunces", cursive`;
+      g.textAlign = 'center'; g.textBaseline = 'middle';
+      const ww = g.measureText(word).width;
+      let px = W / 2 - ww / 2;
+      [...word].forEach((ch, i) => {
+        const cw = g.measureText(ch).width, yy = H * 0.42 + sin(t * 5 + i) * size * 0.12;
+        g.save(); g.translate(px + cw / 2, yy); g.rotate(sin(t * 3 + i * 1.3) * 0.2);
+        g.lineWidth = size * 0.09; g.strokeStyle = INK; g.strokeText(ch, 0, 0);
+        g.fillStyle = PSY[(i + wi) % PSY.length]; g.fillText(ch, 0, 0);
+        g.restore();
+        px += cw;
+      });
+      g.globalAlpha = 1;
+      requestAnimationFrame(draw);
+    };
+    requestAnimationFrame(draw);
   }
 
   // other pages (the synthesizer) register their own scenes with the same pen
