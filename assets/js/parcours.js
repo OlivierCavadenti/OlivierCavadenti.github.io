@@ -239,6 +239,7 @@ void main(){
      State
      ========================================================================== */
   const U = { time: 0, mix: 0, warp: 0.05, kal: 6, kalamt: 0, zoom: 1.35, spin: 0, tunnel: 0, field: 0, chroma: 0.002, hue: 0, dark: 1, beat: 0, grain: 0.07, mx: 0, my: 0 };
+  const PTR = { x: 0, y: 0 };                  // pointer parallax, eased on its own and copied into U.mx/my each frame
   let root = null, stage, svg, glc, fallback, gl = null, tl = null, hud = {}, live, pulse = null;
   let audio = null, actx = null, analyser = null, freq = null;
   const media = { img: {}, vid: {}, started: false, got: 0, t0: 0, rate: 0 };
@@ -897,6 +898,7 @@ void main(){
     // would restyle every letter span of every scene on every frame
     if (pulse && S.t >= pulse.from && S.t < pulse.to) pulse.el.style.transform = `scale(${(1 + U.beat * 0.07).toFixed(4)})`;
     U.time = S.t * K;
+    U.mx = PTR.x; U.my = PTR.y;
     const mix = prev && cur.tr ? clamp((S.t - cur.at) / cur.tr, 0, 1) : 1;
     // live video frames go straight into their textures
     for (const sh of [cur, mix < 1 ? prev : null]) {
@@ -946,7 +948,7 @@ void main(){
       LU.spin = c * 0.12;
       LU.zoom = 1 + 0.06 * sin(c * 2.1);
       LU.beat = (0.5 + 0.5 * sin(c * TAU * 1.2)) * K;
-      LU.mx = U.mx; LU.my = U.my;
+      LU.mx = PTR.x; LU.my = PTR.y;
       gl.draw(W, H, LU, LSHOT, null);
     }
     if (S.gate && ((need <= 0 && S.audioOk) || ts - S.load0 > 45000)) { const go = S.gate; S.gate = null; go(); }
@@ -1083,7 +1085,8 @@ void main(){
     hud.track.addEventListener('pointerup', () => { drag = false; });
     root.addEventListener('pointermove', (e) => {
       if (RM) return;
-      gsap.to(U, { mx: (e.clientX / innerWidth - 0.5) * 2, my: -(e.clientY / innerHeight - 0.5) * 2, duration: 1.2, ease: 'power2.out', overwrite: true });
+      // its own object: overwrite on U would kill every shader tween of the timeline (the fade from black included)
+      gsap.to(PTR, { x: (e.clientX / innerWidth - 0.5) * 2, y: -(e.clientY / innerHeight - 0.5) * 2, duration: 1.2, ease: 'power2.out', overwrite: true });
     });
     document.body.append(root);
     compose();
